@@ -269,10 +269,12 @@ const PCTG_CON_TERCERO={liga1:.30,campeon:.37,subcamp:.20,tercero:.13};
 const PCTG_SIN_TERCERO={liga1:.464,campeon:.393,subcamp:.143,tercero:0};
 // Obtener porcentajes de la liga actual
 function getPCTG(){
-  if(liga&&liga.pozo&&liga.pozo.pctg)return liga.pozo.pctg;
-  // fallback: si tiene tercero configurado usar con_tercero, sino sin_tercero
-  if(liga&&liga.pozo&&liga.pozo.conTercero===false)return PCTG_SIN_TERCERO;
-  return PCTG_CON_TERCERO;
+  try{
+    if(!liga||!liga.pozo)return PCTG_CON_TERCERO;
+    if(liga.pozo.pctg&&liga.pozo.pctg.liga1)return liga.pozo.pctg;
+    if(liga.pozo.conTercero===false)return PCTG_SIN_TERCERO;
+    return PCTG_CON_TERCERO;
+  }catch(e){return PCTG_CON_TERCERO;}
 }
 
 let supaClient=null,liga=null,actId=null,idx=[],isAdmin=false,realtimeSub=null;
@@ -1043,7 +1045,7 @@ function renderCopa(order){
   const con=document.getElementById('copa-con');
   let html='',wins={campeon:null,subcamp:null,tercero:null};
   function bloqueFinales(lSF1,lSF2,wSF1,wSF2){
-    const hayTercero=liga.pozo.conTercero!==false;
+    const hayTercero=!liga||!liga.pozo||liga.pozo.conTercero!==false;
     let h='';
     if(hayTercero){
       h+=`<div class="div"></div><div class="rt">🥉 3ER PUESTO</div>`;
@@ -1222,7 +1224,7 @@ function getWins(order){
   const fin=gGlobal('fin',true),tp=gGlobal('tp',false);
   let campeon=null,subcamp=null,tercero=null;
   if(fin){const{w:fc,l:fs}=rsvM('fin',order[0]||'',order[1]||'',true);campeon=fc;subcamp=fs;}
-  const hayTercero=liga&&liga.pozo&&liga.pozo.conTercero!==false;
+  const hayTercero=!liga||!liga.pozo||liga.pozo.conTercero!==false;
   if(hayTercero&&tp){const{w:tc}=rsvM('tp',order[2]||'',order[3]||'');tercero=tc;}
   return{campeon,subcamp,tercero};
 }
@@ -1287,7 +1289,7 @@ function renderPremios(order,sm){
   const mon=p=>ami?0:Math.round(total*getPCTG()[p]);
   const w=getWins(order);
   const gans={liga1:order[0]||null,...w};
-  const hayTercero=liga.pozo.conTercero!==false;
+  const hayTercero=!liga||!liga.pozo||liga.pozo.conTercero!==false;
   const items=[
     {id:'liga1',label:'1° de la Liga',desc:'Mejor posición tabla regular',clase:'verde'},
     {id:'campeon',label:'Campeón Copa',desc:'Ganador de la final',clase:'oro'},
