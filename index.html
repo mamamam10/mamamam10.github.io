@@ -276,6 +276,22 @@ function getPCTG(){
     return PCTG_CON_TERCERO;
   }catch(e){return PCTG_CON_TERCERO;}
 }
+// Calcula montos exactos que sumen exactamente el pozo total
+function calcMontos(total){
+  const p=getPCTG();
+  const hayT=!liga||!liga.pozo||liga.pozo.conTercero!==false;
+  // Si es personalizado, usar montos directos
+  if(liga&&liga.pozo&&liga.pozo.montos){
+    return liga.pozo.montos;
+  }
+  // Calcular proporcional
+  const m={liga1:Math.round(total*p.liga1),campeon:Math.round(total*p.campeon),subcamp:Math.round(total*p.subcamp),tercero:hayT?Math.round(total*p.tercero):0};
+  // Ajustar diferencia de redondeo al mayor premio
+  const suma=m.liga1+m.campeon+m.subcamp+m.tercero;
+  const diff=total-suma;
+  m.campeon+=diff; // absorbe la diferencia en el campeón
+  return m;
+}
 
 let supaClient=null,liga=null,actId=null,idx=[],isAdmin=false,realtimeSub=null;
 const TT={};
@@ -400,11 +416,11 @@ function iniciarRealtime(){
     }).subscribe();
 }
 
-async function crearLigaSupabase(nombre,jugadores,mezclar,porPersona,amistoso,conTercero=true,pctg=null){
+async function crearLigaSupabase(nombre,jugadores,mezclar,porPersona,amistoso,conTercero=true,pctg=null,montos=null){
   const total=amistoso?0:jugadores.length*porPersona;
   const obj={nombre,jugadores,fixture:genFixture(jugadores,mezclar),
     resultados:{},copa:{},predicciones:{},pins:{},fotos:{},terminada:false,
-    pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso,conTercero:conTercero!==false,pctg:pctg||PCTG_CON_TERCERO},trofeos:[]};
+    pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso,conTercero:conTercero!==false,pctg:pctg||PCTG_CON_TERCERO,...(montos?{montos}:{})},trofeos:[]};
   const{data,error}=await supaClient.from('ligas').insert([obj]).select().single();
   if(error)throw error;
   idx.push({id:data.id,nombre:data.nombre});
@@ -1286,7 +1302,8 @@ async function guardarTrofeoLiga1(order){
 function renderPremios(order,sm){
   if(!liga)return;
   const total=liga.pozo.total,ami=liga.pozo.amistoso;
-  const mon=p=>ami?0:Math.round(total*getPCTG()[p]);
+  const montos=ami?{}:calcMontos(total);
+  const mon=p=>ami?0:(montos[p]||0);
   const w=getWins(order);
   const gans={liga1:order[0]||null,...w};
   const hayTercero=!liga||!liga.pozo||liga.pozo.conTercero!==false;
@@ -1499,6 +1516,37 @@ function aModal(titulo,cuerpo,onOk){
 }
 function cModal(e){if(e&&e.target.id!=='mo')return;document.getElementById('mo').classList.remove('show');}
 
+function actualizarPreviewPremios(){
+  const jug=[...document.querySelectorAll('#nl-jl input[type=text]')].map(i=>i.value.trim()).filter(Boolean).length||4;
+  const monto=parseInt(document.getElementById('nl-m')?.value)||0;
+  const total=monto*jug;
+  const dist=document.querySelector('input[name="dist"]:checked')?.value||'sin_tercero';
+  const custom=document.getElementById('nl-custom');
+  if(custom)custom.style.display=dist==='personalizado'?'block':'none';
+  const prev=document.getElementById('nl-preview');if(!prev)return;
+  if(total===0){prev.innerHTML='';return;}
+  let html=`<strong style="color:#888">Pozo total: $${total}</strong><br>`;
+  if(dist==='personalizado'){
+    const l=parseInt(document.getElementById('nl-c-liga1')?.value)||0;
+    const c=parseInt(document.getElementById('nl-c-campeon')?.value)||0;
+    const s=parseInt(document.getElementById('nl-c-subcamp')?.value)||0;
+    const t=parseInt(document.getElementById('nl-c-tercero')?.value)||0;
+    const suma=l+c+s+t;
+    const ok=suma===total;
+    html+=`🎖️ Liga: $${l} | 🏆 Campeón: $${c} | 🥈 Sub: $${s}${t>0?` | 🥉 3er: $${t}`:''}`;
+    html+=`<br><span style="color:${ok?'#00FF87':'#ff6b6b'}">${ok?'✓ Suma correcta':'⚠️ Suma: $'+suma+' (debe ser $'+total+')'}</span>`;
+  }else{
+    const hayt=dist==='con_tercero';
+    const p=hayt?PCTG_CON_TERCERO:PCTG_SIN_TERCERO;
+    const ml=Math.round(total*p.liga1);
+    const mc=Math.round(total*p.campeon);
+    const ms=Math.round(total*p.subcamp);
+    const mt=hayt?Math.round(total*p.tercero):0;
+    const diff=total-(ml+mc+ms+mt);
+    html+=`🎖️ Liga: $${ml} | 🏆 Campeón: $${mc+diff} | 🥈 Sub: $${ms}${hayt?` | 🥉 3er: $${mt}`:''}`;
+  }
+  prev.innerHTML=html;
+}
 function abrirNuevaLiga(){
   if(!isAdmin){toast('🔒 Necesitás ser admin');return;}
   document.getElementById('mo-t').textContent='➕ NUEVA LIGA';
@@ -1519,6 +1567,7 @@ function abrirNuevaLiga(){
     r.addEventListener('change',()=>{document.getElementById('nl-monto-wrap').style.display=r.value==='ami'?'none':'block';});
   });
   ['Diego','Nazario','Ezequiel','Matías'].forEach(j=>addJRow(j));
+  setTimeout(actualizarPreviewPremios,50);
 }
 function addJRow(val=''){
   const lista=document.getElementById('nl-jl');if(!lista)return;
@@ -1535,10 +1584,24 @@ async function crearDesdeModal(){
   const js=[...document.querySelectorAll('#nl-jl input[type=text]')].map(i=>i.value.trim()).filter(Boolean);
   if(js.length<3){alert('Mínimo 3 jugadores');return;}
   if(js.length>10){alert('Máximo 10 jugadores');return;}
-  const conTercero=document.querySelector('input[name="tercero"]:checked')?.value==='si';
-  const pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
+  const dist=document.querySelector('input[name="dist"]:checked')?.value||'sin_tercero';
+  let conTercero=dist==='con_tercero';
+  let pctg=null,montos=null;
+  const total=monto*js.length;
+  if(dist==='personalizado'){
+    const l=parseInt(document.getElementById('nl-c-liga1')?.value)||0;
+    const c=parseInt(document.getElementById('nl-c-campeon')?.value)||0;
+    const s=parseInt(document.getElementById('nl-c-subcamp')?.value)||0;
+    const t=parseInt(document.getElementById('nl-c-tercero')?.value)||0;
+    if(l+c+s+t!==total){alert('Los montos personalizados deben sumar exactamente $'+total);return;}
+    montos={liga1:l,campeon:c,subcamp:s,tercero:t};
+    conTercero=t>0;
+    pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
+  }else{
+    pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
+  }
   cModal();
-  try{await crearLigaSupabase(nombre,js,mezclar,monto,ami,conTercero,pctg);toast('✓ LIGA CREADA');}
+  try{await crearLigaSupabase(nombre,js,mezclar,monto,ami,conTercero,pctg,montos);toast('✓ LIGA CREADA');}
   catch(e){toast('Error: '+e.message);}
 }
 function abrirGestionarPins(){
