@@ -1284,7 +1284,7 @@ async function guardarTrofeoLiga1(order){
 function renderPremios(order,sm){
   if(!liga)return;
   const total=liga.pozo.total,ami=liga.pozo.amistoso;
-  const mon=p=>ami?0:Math.round(total*PCTG[p]);
+  const mon=p=>ami?0:Math.round(total*getPCTG()[p]);
   const w=getWins(order);
   const gans={liga1:order[0]||null,...w};
   const hayTercero=liga.pozo.conTercero!==false;
