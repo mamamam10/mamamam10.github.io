@@ -249,7 +249,7 @@ tbody td:first-child{text-align:left;}
     <div class="ma"><button class="btn" onclick="cModal()">Cancelar</button><button class="btn bp" id="mo-ok">Confirmar</button></div>
   </div>
 </div>
- 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -262,14 +262,23 @@ const ADMIN_PASS    = 'admin123';
 const ONESIGNAL_ID  = 'd29e6f5e-f811-4361-b844-b46a502234bd';
 const ONESIGNAL_REST = 'os_v2_app_2kpg6xxycfbwdocewrvfairuxvwrd5ufup6uzd4oo27ududbsprfrpvrtoexdr7pdo3yhh4w7azbxteneovyinfdw5x3nnfy6qwyrby';
 const LIGA_ACTIVA_KEY = 'lef_liga_activa';
- 
+
 const AVS=['😎','🧠','⚡','🎯','🔥','🐉','🦅','👑','🌙','⚔️'];
-const PCTG={liga1:.30,campeon:.37,subcamp:.20,tercero:.13};
- 
+// Porcentajes por defecto — se guardan en cada liga al crearla
+const PCTG_CON_TERCERO={liga1:.30,campeon:.37,subcamp:.20,tercero:.13};
+const PCTG_SIN_TERCERO={liga1:.464,campeon:.393,subcamp:.143,tercero:0};
+// Obtener porcentajes de la liga actual
+function getPCTG(){
+  if(liga&&liga.pozo&&liga.pozo.pctg)return liga.pozo.pctg;
+  // fallback: si tiene tercero configurado usar con_tercero, sino sin_tercero
+  if(liga&&liga.pozo&&liga.pozo.conTercero===false)return PCTG_SIN_TERCERO;
+  return PCTG_CON_TERCERO;
+}
+
 let supaClient=null,liga=null,actId=null,idx=[],isAdmin=false,realtimeSub=null;
 const TT={};
 let predicciones={}; // {key: [{jugador, gl, gv}]}
- 
+
 /* ============================================================
    ONESIGNAL INIT
    ============================================================ */
@@ -282,7 +291,7 @@ OneSignalDeferred.push(async function(OneSignal) {
     allowLocalhostAsSecureOrigin: true,
   });
 });
- 
+
 async function enviarNotificacion(titulo, mensaje) {
   try {
     await supaClient.functions.invoke('send-notification', {
@@ -290,7 +299,7 @@ async function enviarNotificacion(titulo, mensaje) {
     });
   } catch(e) { console.log('Notif error:', e); }
 }
- 
+
 function generarTituloPartido(local, visitante, gl, gv) {
   const glN = parseInt(gl), gvN = parseInt(gv);
   const dif = Math.abs(glN - gvN);
@@ -305,7 +314,7 @@ function generarTituloPartido(local, visitante, gl, gv) {
   if (dif === 2) return `⚽ ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
   return `😬 ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
 }
- 
+
 /* ============================================================
    SUPABASE INIT
    ============================================================ */
@@ -320,7 +329,7 @@ function setSyncStatus(txt,cls){
   const el=document.getElementById('sync-status');
   el.textContent=txt;el.className='sync-status '+(cls||'');
 }
- 
+
 async function cargarDesdeSupabase(){
   try{
     const{data,error}=await supaClient.from('ligas').select('*').order('created_at',{ascending:true});
@@ -338,7 +347,7 @@ async function cargarDesdeSupabase(){
     iniciarRealtime();
   }catch(e){setSyncStatus('Error: '+e.message,'sync-err');}
 }
- 
+
 async function cargarLigaSupabase(id){
   const{data,error}=await supaClient.from('ligas').select('*').eq('id',id).single();
   if(error)throw error;
@@ -354,7 +363,7 @@ async function cargarLigaSupabase(id){
     fotos:data.fotos||{}
   };
 }
- 
+
 async function guardarEnSupabase(extra){
   if(!supaClient||!liga)return;
   try{
@@ -372,7 +381,7 @@ async function guardarEnSupabase(extra){
     setSyncStatus('Guardado ✓ — '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),'sync-ok');
   }catch(e){setSyncStatus('Error al guardar','sync-err');}
 }
- 
+
 function iniciarRealtime(){
   if(!supaClient)return;
   if(realtimeSub)supaClient.removeChannel(realtimeSub);
@@ -388,19 +397,19 @@ function iniciarRealtime(){
       setSyncStatus('↻ '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),'sync-ok');
     }).subscribe();
 }
- 
-async function crearLigaSupabase(nombre,jugadores,mezclar,porPersona,amistoso){
+
+async function crearLigaSupabase(nombre,jugadores,mezclar,porPersona,amistoso,conTercero=true,pctg=null){
   const total=amistoso?0:jugadores.length*porPersona;
   const obj={nombre,jugadores,fixture:genFixture(jugadores,mezclar),
     resultados:{},copa:{},predicciones:{},pins:{},fotos:{},terminada:false,
-    pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso},trofeos:[]};
+    pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso,conTercero:conTercero!==false,pctg:pctg||PCTG_CON_TERCERO},trofeos:[]};
   const{data,error}=await supaClient.from('ligas').insert([obj]).select().single();
   if(error)throw error;
   idx.push({id:data.id,nombre:data.nombre});
   poblarSel();await cambiarLiga(data.id);iniciarRealtime();
   return data.id;
 }
- 
+
 /* ============================================================
    FIXTURE GENERATOR
    ============================================================ */
@@ -429,15 +438,15 @@ function genFixture(jugadores,mezclar){
   }
   return todas.map((ps,i)=>({f:i+1,ps}));
 }
- 
+
 function mkL(nombre,jugadores,fixture,resultados,copa,pozoTotal,amistoso){
   const total=pozoTotal||jugadores.length*1500;
   return{id:'l'+Date.now()+'_'+Math.floor(Math.random()*9999),nombre,jugadores,
     fixture:fixture||genFixture(jugadores,false),resultados:resultados||{},copa:copa||{},
     predicciones:{},terminada:false,
-    pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso},trofeos:[]};
+    pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso,conTercero:conTercero!==false,pctg:pctg||PCTG_CON_TERCERO},trofeos:[]};
 }
- 
+
 /* ============================================================
    CAMBIAR LIGA
    ============================================================ */
@@ -450,11 +459,11 @@ async function cambiarLiga(id){
   renderFixture();renderTabla();renderPBtns();renderPred();poblarFechaSel();
   iniciarRealtime();
 }
- 
+
 function poblarSel(){
   document.getElementById('lsel').innerHTML=idx.map(l=>`<option value="${l.id}" ${l.id===actId?'selected':''}>${l.nombre}</option>`).join('');
 }
- 
+
 /* ============================================================
    BANNER LIGA TERMINADA
    ============================================================ */
@@ -468,7 +477,7 @@ function renderBannerTerminada(){
     </div>`;
   }else{el.innerHTML='';}
 }
- 
+
 async function toggleTerminada(){
   if(!isAdmin)return;
   liga.terminada=!liga.terminada;
@@ -477,7 +486,7 @@ async function toggleTerminada(){
   renderFixture();
   toast(liga.terminada?'🏁 Liga terminada':'✅ Liga reabierta');
 }
- 
+
 /* ============================================================
    ADMIN
    ============================================================ */
@@ -511,7 +520,7 @@ function loginAdmin(){
   if(v===ADMIN_PASS){setAdmin(true);toast('✓ BIENVENIDO ADMIN');}
   else toast('❌ CONTRASEÑA INCORRECTA');
 }
- 
+
 /* ============================================================
    TABLA con racha
    ============================================================ */
@@ -540,13 +549,13 @@ function calcTabla(){
     return sb.gf-sa.gf;
   });
 }
- 
+
 function calcRachaActual(partidos){
   const sorted=[...partidos].sort((a,b)=>a.jornada-b.jornada);
   const ultimos=sorted.slice(-5);
   return ultimos.map(p=>p.gf>p.gc?'W':p.gf<p.gc?'L':'E');
 }
- 
+
 function renderTabla(){
   if(!liga)return;
   const sorted=calcTabla();
@@ -567,7 +576,7 @@ function renderTabla(){
   const order=sorted.map(([n])=>n),sm=Object.fromEntries(sorted);
   renderCopa(order);renderPremios(order,sm);renderInd(sm);renderPred();
 }
- 
+
 /* ============================================================
    TABLA POR FECHA
    ============================================================ */
@@ -587,7 +596,7 @@ function poblarFechaSel(){
   sel.value=ultima;
   renderTablaFecha();
 }
- 
+
 function renderTablaFecha(){
   if(!liga)return;
   const sel=document.getElementById('fecha-sel');if(!sel)return;
@@ -624,7 +633,7 @@ function renderTablaFecha(){
       <td class="pts">${s.pts}</td>
     </tr>`).join('');
 }
- 
+
 /* ============================================================
    FOTOS POR PARTIDO
    ============================================================ */
@@ -643,7 +652,7 @@ function renderFotosPartido(key,isAdmin){
     <div class="foto-preview">${previewHtml}${addBtn}</div>
   </div>`;
 }
- 
+
 async function subirFoto(event,key){
   if(!isAdmin)return;
   const file=event.target.files[0];if(!file)return;
@@ -662,12 +671,12 @@ async function subirFoto(event,key){
   };
   reader.readAsDataURL(file);
 }
- 
+
 function verFotoGrande(url){
   aModal('📸 FOTO',`<img src="${url}" class="foto-modal-img">`,null);
 }
- 
- 
+
+
 function getH2H(j1,j2){
   let w1=0,w2=0,emp=0;
   liga.fixture.forEach(jorn=>{
@@ -683,14 +692,14 @@ function getH2H(j1,j2){
   });
   return{w1,w2,emp};
 }
- 
+
 function toggleH2HFecha(id){
   const el=document.getElementById('h2h_'+id),tog=document.getElementById('tog_'+id);if(!el)return;
   const showing=el.style.display==='block';
   el.style.display=showing?'none':'block';
   if(tog)tog.textContent=showing?'▼ ver H2H':'▲ ocultar H2H';
 }
- 
+
 function renderFixture(){
   if(!liga)return;
   const con=document.getElementById('fix-con');
@@ -781,7 +790,7 @@ function renderFixture(){
     con.prepend(note);
   }
 }
- 
+
 function notifManualPartido(local,visitante,gl,gv,tipo){
   const titulo=generarTituloPartido(local,visitante,gl,gv);
   let msg=`${liga.nombre} • ${local} ${gl}-${gv} ${visitante}`;
@@ -789,8 +798,8 @@ function notifManualPartido(local,visitante,gl,gv,tipo){
   enviarNotificacion(titulo,msg);
   toast('🔔 Notificación enviada');
 }
- 
- 
+
+
 function preG(k,local,visitante){clearTimeout(TT[k]);TT[k]=setTimeout(()=>gP(k,local,visitante),600);}
 async function gP(k,local,visitante){
   if(!isAdmin||liga.terminada)return;
@@ -809,7 +818,7 @@ async function gP(k,local,visitante){
   }
   toast('✓ GUARDADO');
 }
- 
+
 /* ============================================================
    PREDICCIONES
    ============================================================ */
@@ -827,7 +836,7 @@ function calcPuntosPred(predL,predV,realL,realV){
   if(predGan===realGan)return 1;
   return 0;
 }
- 
+
 async function guardarPred(key,local,visitante){
   const jugador=document.getElementById('ps_'+key)?.value;
   const gl=document.getElementById('pgl_'+key)?.value;
@@ -852,7 +861,7 @@ async function guardarPred(key,local,visitante){
   renderFixture();renderPred();
   toast(`✓ Predicción de ${jugador} guardada`);
 }
- 
+
 function calcRankingPred(){
   const pts={};
   liga.jugadores.forEach(j=>{pts[j]={pts:0,exactos:0,ganador:0,total:0};});
@@ -870,7 +879,7 @@ function calcRankingPred(){
   });
   return Object.entries(pts).sort((a,b)=>b[1].pts-a[1].pts||b[1].exactos-a[1].exactos);
 }
- 
+
 function renderPred(){
   if(!liga)return;
   const ranking=calcRankingPred();
@@ -919,7 +928,7 @@ function renderPred(){
   }
   con.innerHTML=html;
 }
- 
+
 async function guardarPredTab(key,local,visitante){
   const jugador=document.getElementById('psp_'+key)?.value;
   const gl=document.getElementById('pglp_'+key)?.value;
@@ -941,7 +950,7 @@ async function guardarPredTab(key,local,visitante){
   renderPred();renderFixture();
   toast(`✓ Predicción de ${jugador} guardada`);
 }
- 
+
 /* ============================================================
    COPA
    ============================================================ */
@@ -1028,14 +1037,18 @@ function restoreInputs(){
   document.querySelectorAll('.bs').forEach(el=>{if(liga.copa[el.id]!==undefined)el.value=liga.copa[el.id];});
   document.querySelectorAll('.empate-sel').forEach(el=>{if(liga.copa[el.id]!==undefined)el.value=liga.copa[el.id];});
 }
- 
+
 function renderCopa(order){
   const N=liga.jugadores.length,n=i=>order[i-1]||`${i}°`;
   const con=document.getElementById('copa-con');
   let html='',wins={campeon:null,subcamp:null,tercero:null};
   function bloqueFinales(lSF1,lSF2,wSF1,wSF2){
-    let h=`<div class="div"></div><div class="rt">🥉 3ER PUESTO</div>`;
-    h+=htmlIV('tp',lSF1||'Perd. SF1',lSF2||'Perd. SF2',!(lSF1&&lSF2));
+    const hayTercero=liga.pozo.conTercero!==false;
+    let h='';
+    if(hayTercero){
+      h+=`<div class="div"></div><div class="rt">🥉 3ER PUESTO</div>`;
+      h+=htmlIV('tp',lSF1||'Perd. SF1',lSF2||'Perd. SF2',!(lSF1&&lSF2));
+    }
     h+=`<div class="div"></div><div class="rt">🏆 FINAL</div>`;
     h+=htmlU('fin',wSF1||'Gan. SF1',wSF2||'Gan. SF2',!(wSF1&&wSF2));
     return h;
@@ -1185,7 +1198,7 @@ function renderCopa(order){
   if(wins.campeon&&wins.subcamp&&isAdmin)guardarTrofeosCopa(wins,order);
   return wins;
 }
- 
+
 async function gCopa(){
   if(!isAdmin)return;
   // Guardar estado anterior para detectar cambios
@@ -1204,15 +1217,16 @@ async function gCopa(){
   }
   toast('✓ GUARDADO');
 }
- 
+
 function getWins(order){
   const fin=gGlobal('fin',true),tp=gGlobal('tp',false);
   let campeon=null,subcamp=null,tercero=null;
-  if(fin){const{w:fc,l:fs}=rsvM('fin',order[0],order[1],true);campeon=fc;subcamp=fs;}
-  if(tp){const{w:tc}=rsvM('tp',order[2],order[3]);tercero=tc;}
+  if(fin){const{w:fc,l:fs}=rsvM('fin',order[0]||'',order[1]||'',true);campeon=fc;subcamp=fs;}
+  const hayTercero=liga&&liga.pozo&&liga.pozo.conTercero!==false;
+  if(hayTercero&&tp){const{w:tc}=rsvM('tp',order[2]||'',order[3]||'');tercero=tc;}
   return{campeon,subcamp,tercero};
 }
- 
+
 /* ============================================================
    TROFEOS — resetear y recalcular desde resultados reales
    ============================================================ */
@@ -1226,11 +1240,11 @@ async function resetearTrofeos(){
     const total=liga.pozo.total;
     const nuevos=[];
     // Trofeos copa
-    if(wins.campeon)nuevos.push({jugador:wins.campeon,tipo_premio:'campeon_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.campeon)});
-    if(wins.subcamp)nuevos.push({jugador:wins.subcamp,tipo_premio:'subcamp_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.subcamp)});
-    if(wins.tercero)nuevos.push({jugador:wins.tercero,tipo_premio:'tercero_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.tercero)});
+    if(wins.campeon)nuevos.push({jugador:wins.campeon,tipo_premio:'campeon_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().campeon)});
+    if(wins.subcamp)nuevos.push({jugador:wins.subcamp,tipo_premio:'subcamp_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().subcamp)});
+    if(wins.tercero)nuevos.push({jugador:wins.tercero,tipo_premio:'tercero_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().tercero)});
     // Trofeo liga 1 — solo si la liga está terminada
-    if(liga.terminada&&order[0])nuevos.push({jugador:order[0],tipo_premio:'liga1',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.liga1)});
+    if(liga.terminada&&order[0])nuevos.push({jugador:order[0],tipo_premio:'liga1',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().liga1)});
     liga.trofeos=nuevos;
     await guardarEnSupabase();
     cModal();
@@ -1238,7 +1252,7 @@ async function resetearTrofeos(){
     toast('✓ Trofeos recalculados correctamente');
   });
 }
- 
+
 async function guardarTrofeosCopa(wins,order){
   if(!liga)return;
   const trofeos=liga.trofeos||[];
@@ -1246,24 +1260,24 @@ async function guardarTrofeosCopa(wins,order){
   const tipo=liga.pozo.amistoso?'amistoso':'competitivo';
   const total=liga.pozo.total;
   const nuevos=[
-    {jugador:wins.campeon,tipo_premio:'campeon_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.campeon)},
-    {jugador:wins.subcamp,tipo_premio:'subcamp_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.subcamp)},
+    {jugador:wins.campeon,tipo_premio:'campeon_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().campeon)},
+    {jugador:wins.subcamp,tipo_premio:'subcamp_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().subcamp)},
   ];
-  if(wins.tercero)nuevos.push({jugador:wins.tercero,tipo_premio:'tercero_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*PCTG.tercero)});
+  if(wins.tercero)nuevos.push({jugador:wins.tercero,tipo_premio:'tercero_copa',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(total*getPCTG().tercero)});
   liga.trofeos=[...trofeos,...nuevos];
   await guardarEnSupabase();
 }
- 
+
 async function guardarTrofeoLiga1(order){
   if(!liga||!isAdmin)return;
   const trofeos=liga.trofeos||[];
   if(trofeos.some(t=>t.tipo_premio==='liga1')){toast('Ya guardado');return;}
   const tipo=liga.pozo.amistoso?'amistoso':'competitivo';
   const lider=order[0];if(!lider)return;
-  liga.trofeos=[...trofeos,{jugador:lider,tipo_premio:'liga1',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(liga.pozo.total*PCTG.liga1)}];
+  liga.trofeos=[...trofeos,{jugador:lider,tipo_premio:'liga1',tipo,ligaNombre:liga.nombre,ligaId:liga.id,dinero:Math.round(liga.pozo.total*getPCTG().liga1)}];
   await guardarEnSupabase();toast('🏅 Trofeo Liga 1 guardado');
 }
- 
+
 /* ============================================================
    PREMIOS
    ============================================================ */
@@ -1273,11 +1287,12 @@ function renderPremios(order,sm){
   const mon=p=>ami?0:Math.round(total*PCTG[p]);
   const w=getWins(order);
   const gans={liga1:order[0]||null,...w};
+  const hayTercero=liga.pozo.conTercero!==false;
   const items=[
     {id:'liga1',label:'1° de la Liga',desc:'Mejor posición tabla regular',clase:'verde'},
     {id:'campeon',label:'Campeón Copa',desc:'Ganador de la final',clase:'oro'},
     {id:'subcamp',label:'Subcampeón Copa',desc:'Finalista',clase:'plata'},
-    {id:'tercero',label:'3° puesto Copa',desc:'Ganador 3er puesto',clase:'bronce'},
+    ...(hayTercero?[{id:'tercero',label:'3° puesto Copa',desc:'Ganador 3er puesto',clase:'bronce'}]:[]),
   ];
   let html=`<div class="ib${ami?' am':''}">Pozo: <strong>${ami?'AMISTOSO':'$'+total+' ($'+liga.pozo.porPersona+' × '+liga.jugadores.length+')'}</strong>${ami?'<span class="ami-badge">🎮 AMISTOSO</span>':''}</div>`;
   items.forEach(p=>{
@@ -1297,7 +1312,7 @@ function renderPremios(order,sm){
   }
   document.getElementById('pre-con').innerHTML=html;
 }
- 
+
 /* ============================================================
    PREMIOS INDIVIDUALES
    ============================================================ */
@@ -1357,7 +1372,7 @@ function renderInd(sm){
   const pr=calcInd(sm);
   document.getElementById('ind-con').innerHTML=pr.map(p=>`<div class="pi"><div class="pi-i">${p.i}</div><div><div class="pi-n">${p.n}</div><div class="pi-d">${p.d}</div></div><div class="pi-w">${p.g}</div></div>`).join('');
 }
- 
+
 /* ============================================================
    FAMILIA
    ============================================================ */
@@ -1385,7 +1400,7 @@ function calcFamilia(sm){
   });
   return familia;
 }
- 
+
 /* ============================================================
    PERFILES
    ============================================================ */
@@ -1395,7 +1410,7 @@ function renderPBtns(){
     <div class="pbtn" onclick="showPerfil('${j}',this)"><div class="pav">${AVS[i]||'⚽'}</div><div class="pnm">${j}</div></div>`).join('');
   document.getElementById('p-det').innerHTML='';
 }
- 
+
 async function showPerfil(nombre,btn){
   document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -1469,7 +1484,7 @@ async function showPerfil(nombre,btn){
   }else html+=`<div class="ib" style="margin-top:12px;">Sin partidos cargados.</div>`;
   document.getElementById('p-det').innerHTML=html;
 }
- 
+
 /* ============================================================
    MODAL / NUEVA LIGA / ADMIN
    ============================================================ */
@@ -1481,7 +1496,7 @@ function aModal(titulo,cuerpo,onOk){
   document.getElementById('mo').classList.add('show');
 }
 function cModal(e){if(e&&e.target.id!=='mo')return;document.getElementById('mo').classList.remove('show');}
- 
+
 function abrirNuevaLiga(){
   if(!isAdmin){toast('🔒 Necesitás ser admin');return;}
   document.getElementById('mo-t').textContent='➕ NUEVA LIGA';
@@ -1518,8 +1533,10 @@ async function crearDesdeModal(){
   const js=[...document.querySelectorAll('#nl-jl input[type=text]')].map(i=>i.value.trim()).filter(Boolean);
   if(js.length<3){alert('Mínimo 3 jugadores');return;}
   if(js.length>10){alert('Máximo 10 jugadores');return;}
+  const conTercero=document.querySelector('input[name="tercero"]:checked')?.value==='si';
+  const pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
   cModal();
-  try{await crearLigaSupabase(nombre,js,mezclar,monto,ami);toast('✓ LIGA CREADA');}
+  try{await crearLigaSupabase(nombre,js,mezclar,monto,ami,conTercero,pctg);toast('✓ LIGA CREADA');}
   catch(e){toast('Error: '+e.message);}
 }
 function abrirGestionarPins(){
@@ -1547,7 +1564,7 @@ function abrirGestionarPins(){
       toast('✓ PINs guardados');
     });
 }
- 
+
 function abrirRenombrar(){
   if(!isAdmin){toast('🔒 Necesitás ser admin');return;}
   aModal('✏️ RENOMBRAR',`<input type="text" id="rn-n" value="${liga.nombre}">`,async()=>{
@@ -1566,7 +1583,7 @@ function abrirBorrar(){
     toast('✓ BORRADA');
   });
 }
- 
+
 /* ============================================================
    UI
    ============================================================ */
@@ -1580,7 +1597,7 @@ function showTab(name,el){
   document.getElementById('panel-'+name).classList.add('active');
   el.classList.add('active');
 }
- 
+
 /* ============================================================
    INIT
    ============================================================ */
