@@ -528,6 +528,7 @@ function renderAdminPanel(){
       </button>
       <button class="btn" style="width:100%;margin-bottom:8px;" onclick="abrirGestionarPins()">🔑 Gestionar PINs de predicciones</button>
       <button class="btn" style="width:100%;margin-bottom:8px;" onclick="resetearTrofeos()">🔧 Resetear y recalcular trofeos</button>
+      <button class="btn" style="width:100%;margin-bottom:8px;" onclick="abrirConfigurarPremios()" ${liga?.terminada?'disabled style="opacity:.4;cursor:not-allowed;"':''}>⚙️ Configurar premios</button>
       <button class="btn bw" style="width:100%;margin-bottom:8px;" onclick="setAdmin(false)">🔓 Cerrar sesión</button>
       <button class="btn bw" style="width:100%;" onclick="abrirBorrar()">🗑️ Borrar liga actual</button>
     </div>`;
@@ -1684,6 +1685,53 @@ async function crearDesdeModal(){
   try{await crearLigaSupabase(nombre,js,mezclar,monto,ami,conTercero,pctg,montos);toast('✓ LIGA CREADA');}
   catch(e){toast('Error: '+e.message);}
 }
+function abrirConfigurarPremios(){
+  if(!isAdmin||liga?.terminada)return;
+  const total=liga.pozo.total;
+  const m=liga.pozo.montos||calcMontos(total);
+  document.getElementById('mo-t').textContent='⚙️ CONFIGURAR PREMIOS';
+  document.getElementById('mo-b').innerHTML=`
+    <p style="margin-bottom:8px;">Pozo total: <strong style="color:var(--v)">$${total}</strong>. Los montos deben sumar exactamente ese valor.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🎖️ 1° de la Liga</span><input type="number" id="cp-liga1" min="0" value="${m.liga1}" style="width:100px;" oninput="chkPremios(${total})"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🏆 Campeón Copa</span><input type="number" id="cp-campeon" min="0" value="${m.campeon}" style="width:100px;" oninput="chkPremios(${total})"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🥈 Subcampeón Copa</span><input type="number" id="cp-subcamp" min="0" value="${m.subcamp}" style="width:100px;" oninput="chkPremios(${total})"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🥉 3er Puesto Copa</span><input type="number" id="cp-tercero" min="0" value="${m.tercero}" placeholder="0 = sin premio" style="width:100px;" oninput="chkPremios(${total})"></div>
+    </div>
+    <div id="cp-status" style="margin-top:10px;padding:8px;border-radius:6px;font-size:.78rem;text-align:center;"></div>`;
+  document.getElementById('mo-ok').style.display='';
+  document.getElementById('mo-ok').textContent='✓ Guardar';
+  document.getElementById('mo-ok').onclick=async()=>{
+    const l=parseInt(document.getElementById('cp-liga1')?.value)||0;
+    const c=parseInt(document.getElementById('cp-campeon')?.value)||0;
+    const s=parseInt(document.getElementById('cp-subcamp')?.value)||0;
+    const t=parseInt(document.getElementById('cp-tercero')?.value)||0;
+    if(l+c+s+t!==total){toast('⚠️ Los montos deben sumar $'+total);return;}
+    liga.pozo.montos={liga1:l,campeon:c,subcamp:s,tercero:t};
+    liga.pozo.conTercero=t>0;
+    await guardarEnSupabase({pozo:liga.pozo});
+    cModal();
+    const sorted=calcTabla(),order=sorted.map(([n])=>n),sm=Object.fromEntries(sorted);
+    renderPremios(order,sm);
+    toast('✓ Premios guardados');
+  };
+  document.getElementById('mo').classList.add('show');
+  chkPremios(total);
+}
+
+function chkPremios(total){
+  const l=parseInt(document.getElementById('cp-liga1')?.value)||0;
+  const c=parseInt(document.getElementById('cp-campeon')?.value)||0;
+  const s=parseInt(document.getElementById('cp-subcamp')?.value)||0;
+  const t=parseInt(document.getElementById('cp-tercero')?.value)||0;
+  const suma=l+c+s+t;
+  const ok=suma===total;
+  const el=document.getElementById('cp-status');if(!el)return;
+  el.style.background=ok?'rgba(0,255,135,.1)':'rgba(255,107,107,.1)';
+  el.style.color=ok?'var(--v)':'var(--rd)';
+  el.textContent=ok?'✓ Correcto — suma $'+suma:'Suma: $'+suma+' | '+(suma<total?'Faltan $'+(total-suma):'Sobran $'+(suma-total));
+}
+
 function abrirGestionarPins(){
   if(!isAdmin)return;
   const pins=liga.pins||{};
