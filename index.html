@@ -235,7 +235,7 @@ tbody td:first-child{text-align:left;}
   <div class="tw"><table><thead><tr><th>Jugador</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr></thead><tbody id="tbody-fecha"></tbody></table></div>
 </div>
 <div id="panel-fixture" class="panel"><div class="ib" id="fix-ib"></div><div id="fix-con"></div></div>
-<div id="panel-copa" class="panel"><div class="ib am" id="copa-ib"></div><div id="copa-con"></div><div id="copa-res" style="margin-top:12px;"></div></div>
+<div id="panel-copa" class="panel"><div class="ib am" id="copa-ib"></div><div class="ib am" id="copa-terminada-note" style="display:none;">🏁 <strong>Liga terminada.</strong> Los resultados de copa están bloqueados.</div><div id="copa-con"></div><div id="copa-res" style="margin-top:12px;"></div></div>
 <div id="panel-premios" class="panel"><div id="pre-con"></div></div>
 <div id="panel-ind" class="panel"><div class="ib">Calculados <strong>automáticamente</strong>.</div><div id="ind-con"></div></div>
 <div id="panel-pred" class="panel"><div id="pred-con"></div></div>
@@ -990,7 +990,7 @@ function rsvM(mid,nL,nV,solo){
   return{w:null,l:null};
 }
 function htmlIV(mid,nL,nV,forceDisabled){
-  const d=(forceDisabled||!isAdmin)?'disabled':'';
+  const d=(forceDisabled||!isAdmin||liga?.terminada)?'disabled':'';
   const g=gGlobal(mid,false);
   const esEmpate=g&&g.L===g.V;
   const ganador=g&&!esEmpate?(g.L>g.V?nL:nV):null;
@@ -1019,7 +1019,7 @@ function htmlIV(mid,nL,nV,forceDisabled){
   <div class="br" id="${mid}_r"></div>`;
 }
 function htmlU(mid,nL,nV,forceDisabled){
-  const d=(forceDisabled||!isAdmin)?'disabled':'';
+  const d=(forceDisabled||!isAdmin||liga?.terminada)?'disabled':'';
   const g=gGlobal(mid,true);
   const esEmpate=g&&g.L===g.V;
   const notifBtn=isAdmin&&g&&!forceDisabled?`<div style="text-align:right;margin-top:4px;">
@@ -1057,6 +1057,8 @@ function restoreInputs(){
 }
 
 function renderCopa(order){
+  const copaNote=document.getElementById('copa-terminada-note');
+  if(copaNote){copaNote.style.display=liga?.terminada?'block':'none';}
   const N=liga.jugadores.length,n=i=>order[i-1]||`${i}°`;
   const con=document.getElementById('copa-con');
   let html='',wins={campeon:null,subcamp:null,tercero:null};
@@ -1568,36 +1570,71 @@ function aModal(titulo,cuerpo,onOk){
 }
 function cModal(e){if(e&&e.target.id!=='mo')return;document.getElementById('mo').classList.remove('show');}
 
+// Montos personalizados temporales para nueva liga
+let _montosPersonalizados=null;
+
 function actualizarPreviewPremios(){
   const jug=[...document.querySelectorAll('#nl-jl input[type=text]')].map(i=>i.value.trim()).filter(Boolean).length||4;
   const monto=parseInt(document.getElementById('nl-m')?.value)||0;
   const total=monto*jug;
-  const dist=document.querySelector('input[name="dist"]:checked')?.value||'sin_tercero';
-  const custom=document.getElementById('nl-custom');
-  if(custom)custom.style.display=dist==='personalizado'?'block':'none';
   const prev=document.getElementById('nl-preview');if(!prev)return;
   if(total===0){prev.innerHTML='';return;}
-  let html=`<strong style="color:#888">Pozo total: $${total}</strong><br>`;
-  if(dist==='personalizado'){
-    const l=parseInt(document.getElementById('nl-c-liga1')?.value)||0;
-    const c=parseInt(document.getElementById('nl-c-campeon')?.value)||0;
-    const s=parseInt(document.getElementById('nl-c-subcamp')?.value)||0;
-    const t=parseInt(document.getElementById('nl-c-tercero')?.value)||0;
-    const suma=l+c+s+t;
-    const ok=suma===total;
-    html+=`🎖️ Liga: $${l} | 🏆 Campeón: $${c} | 🥈 Sub: $${s}${t>0?` | 🥉 3er: $${t}`:''}`;
-    html+=`<br><span style="color:${ok?'#00FF87':'#ff6b6b'}">${ok?'✓ Suma correcta':'⚠️ Suma: $'+suma+' (debe ser $'+total+')'}</span>`;
+  if(_montosPersonalizados){
+    const m=_montosPersonalizados;
+    const suma=m.liga1+m.campeon+m.subcamp+m.tercero;
+    prev.innerHTML=`<span style="color:#888">Pozo: $${total}</span> | 🎨 Personalizado<br>🎖️ $${m.liga1} | 🏆 $${m.campeon} | 🥈 $${m.subcamp}${m.tercero>0?` | 🥉 $${m.tercero}`:''}`;
   }else{
-    const hayt=dist==='con_tercero';
-    const p=hayt?PCTG_CON_TERCERO:PCTG_SIN_TERCERO;
+    const p=PCTG_SIN_TERCERO;
     const ml=Math.round(total*p.liga1);
     const mc=Math.round(total*p.campeon);
-    const ms=Math.round(total*p.subcamp);
-    const mt=hayt?Math.round(total*p.tercero):0;
-    const diff=total-(ml+mc+ms+mt);
-    html+=`🎖️ Liga: $${ml} | 🏆 Campeón: $${mc+diff} | 🥈 Sub: $${ms}${hayt?` | 🥉 3er: $${mt}`:''}`;
+    const ms=total-ml-mc;
+    prev.innerHTML=`<span style="color:#888">Pozo: $${total}</span> — Sin 3er puesto<br>🎖️ $${ml} | 🏆 $${mc} | 🥈 $${ms}`;
   }
-  prev.innerHTML=html;
+}
+
+function abrirPersonalizado(){
+  const jug=[...document.querySelectorAll('#nl-jl input[type=text]')].map(i=>i.value.trim()).filter(Boolean).length||4;
+  const monto=parseInt(document.getElementById('nl-m')?.value)||0;
+  const total=monto*jug;
+  if(total===0){toast('Primero ingresá el monto por persona');return;}
+  const prev=_montosPersonalizados||{liga1:Math.round(total*0.464),campeon:Math.round(total*0.393),subcamp:total-Math.round(total*0.464)-Math.round(total*0.393),tercero:0};
+  document.getElementById('mo-t').textContent='🎨 PREMIOS PERSONALIZADOS';
+  document.getElementById('mo-b').innerHTML=`
+    <p style="margin-bottom:8px;">Pozo total: <strong style="color:var(--v)">$${total}</strong>. Los montos deben sumar exactamente ese valor.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🎖️ 1° de la Liga</span><input type="number" id="pc-liga1" min="0" value="${prev.liga1}" style="width:100px;" oninput="chkCustom(${total})"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🏆 Campeón Copa</span><input type="number" id="pc-campeon" min="0" value="${prev.campeon}" style="width:100px;" oninput="chkCustom(${total})"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🥈 Subcampeón Copa</span><input type="number" id="pc-subcamp" min="0" value="${prev.subcamp}" style="width:100px;" oninput="chkCustom(${total})"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;">🥉 3er Puesto Copa</span><input type="number" id="pc-tercero" min="0" value="${prev.tercero}" placeholder="0 = sin premio" style="width:100px;" oninput="chkCustom(${total})"></div>
+    </div>
+    <div id="pc-status" style="margin-top:10px;padding:8px;border-radius:6px;font-size:.78rem;text-align:center;"></div>`;
+  document.getElementById('mo-ok').style.display='';
+  document.getElementById('mo-ok').textContent='✓ Confirmar';
+  document.getElementById('mo-ok').onclick=()=>{
+    const l=parseInt(document.getElementById('pc-liga1')?.value)||0;
+    const c=parseInt(document.getElementById('pc-campeon')?.value)||0;
+    const s=parseInt(document.getElementById('pc-subcamp')?.value)||0;
+    const t=parseInt(document.getElementById('pc-tercero')?.value)||0;
+    if(l+c+s+t!==total){toast('⚠️ Los montos no suman $'+total);return;}
+    _montosPersonalizados={liga1:l,campeon:c,subcamp:s,tercero:t};
+    cModal();actualizarPreviewPremios();
+    toast('✓ Premios personalizados guardados');
+  };
+  document.getElementById('mo').classList.add('show');
+  chkCustom(total);
+}
+
+function chkCustom(total){
+  const l=parseInt(document.getElementById('pc-liga1')?.value)||0;
+  const c=parseInt(document.getElementById('pc-campeon')?.value)||0;
+  const s=parseInt(document.getElementById('pc-subcamp')?.value)||0;
+  const t=parseInt(document.getElementById('pc-tercero')?.value)||0;
+  const suma=l+c+s+t;
+  const ok=suma===total;
+  const el=document.getElementById('pc-status');if(!el)return;
+  el.style.background=ok?'rgba(0,255,135,.1)':'rgba(255,107,107,.1)';
+  el.style.color=ok?'var(--v)':'var(--rd)';
+  el.textContent=ok?'✓ Suma correcta — $'+suma:'Suma actual: $'+suma+' | Faltan: $'+(total-suma);
 }
 function abrirNuevaLiga(){
   if(!isAdmin){toast('🔒 Necesitás ser admin');return;}
@@ -1626,6 +1663,7 @@ function addJRow(val=''){
   const div=document.createElement('div');div.className='jrow';
   div.innerHTML=`<input type="text" placeholder="Nombre" value="${val}"><button class="btn" onclick="this.parentElement.remove()">✕</button>`;
   lista.appendChild(div);
+  setTimeout(actualizarPreviewPremios,50);
 }
 async function crearDesdeModal(){
   if(!isAdmin)return;
@@ -1636,22 +1674,10 @@ async function crearDesdeModal(){
   const js=[...document.querySelectorAll('#nl-jl input[type=text]')].map(i=>i.value.trim()).filter(Boolean);
   if(js.length<3){alert('Mínimo 3 jugadores');return;}
   if(js.length>10){alert('Máximo 10 jugadores');return;}
-  const dist=document.querySelector('input[name="dist"]:checked')?.value||'sin_tercero';
-  let conTercero=dist==='con_tercero';
-  let pctg=null,montos=null;
-  const total=monto*js.length;
-  if(dist==='personalizado'){
-    const l=parseInt(document.getElementById('nl-c-liga1')?.value)||0;
-    const c=parseInt(document.getElementById('nl-c-campeon')?.value)||0;
-    const s=parseInt(document.getElementById('nl-c-subcamp')?.value)||0;
-    const t=parseInt(document.getElementById('nl-c-tercero')?.value)||0;
-    if(l+c+s+t!==total){alert('Los montos personalizados deben sumar exactamente $'+total);return;}
-    montos={liga1:l,campeon:c,subcamp:s,tercero:t};
-    conTercero=t>0;
-    pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
-  }else{
-    pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
-  }
+  let montos=_montosPersonalizados||null;
+  let conTercero=montos?montos.tercero>0:false;
+  let pctg=conTercero?{...PCTG_CON_TERCERO}:{...PCTG_SIN_TERCERO};
+  _montosPersonalizados=null; // reset
   cModal();
   try{await crearLigaSupabase(nombre,js,mezclar,monto,ami,conTercero,pctg,montos);toast('✓ LIGA CREADA');}
   catch(e){toast('Error: '+e.message);}
