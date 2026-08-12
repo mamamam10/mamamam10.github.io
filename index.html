@@ -1237,11 +1237,63 @@ async function gCopa(){
 }
 
 function getWins(order){
+  // Buscar los finalistas reales desde los resultados de copa
+  // El ganador de SF1 y SF2 son los que juegan la final
+  // No usar order[] para final porque puede no coincidir con tabla
   const fin=gGlobal('fin',true),tp=gGlobal('tp',false);
   let campeon=null,subcamp=null,tercero=null;
-  if(fin){const{w:fc,l:fs}=rsvM('fin',order[0]||'',order[1]||'',true);campeon=fc;subcamp=fs;}
+  if(fin){
+    // Obtener los nombres reales que jugaron la final desde las semis
+    const{w:wSF1}=rsvM('sf1',liga.copa.sf1_nL||order[0]||'',liga.copa.sf1_nV||order[3]||'');
+    const{w:wSF2}=rsvM('sf2',liga.copa.sf2_nL||order[1]||'',liga.copa.sf2_nV||order[2]||'');
+    // Los finalistas son los ganadores de semis — buscarlos en copa directamente
+    // Usar el texto que ya está en los inputs del HTML para los finalistas
+    // Mejor: recalcular desde renderCopa usando el mismo order
+    const s=calcTabla(),ord=s.map(([n])=>n);
+    const N=liga.jugadores.length,n=i=>ord[i-1]||'';
+    let finL=null,finV=null;
+    if(N<=4){
+      const{w:a}=rsvM('sf1',n(1),n(4));const{w:b}=rsvM('sf2',n(2),n(3));
+      finL=a;finV=b;
+    }else if(N===5){
+      const{w:q}=rsvM('qf1',n(4),n(5));
+      const{w:a}=q?rsvM('sf1',n(1),q):{w:null};const{w:b}=rsvM('sf2',n(2),n(3));
+      finL=a;finV=b;
+    }else if(N===6){
+      const{w:q1}=rsvM('qf1',n(3),n(6));const{w:q2}=rsvM('qf2',n(4),n(5));
+      const{w:a}=q1?rsvM('sf1',n(1),q1):{w:null};const{w:b}=q2?rsvM('sf2',n(2),q2):{w:null};
+      finL=a;finV=b;
+    }else if(N===7){
+      const{w:q1}=rsvM('qf1',n(2),n(7));const{w:q2}=rsvM('qf2',n(3),n(6));const{w:q3}=rsvM('qf3',n(4),n(5));
+      const{w:a}=q1?rsvM('sf1',n(1),q1):{w:null};const{w:b}=(q2&&q3)?rsvM('sf2',q2,q3):{w:null};
+      finL=a;finV=b;
+    }else if(N===8){
+      const{w:q1}=rsvM('qf1',n(1),n(8));const{w:q4}=rsvM('qf4',n(4),n(5));
+      const{w:q2}=rsvM('qf2',n(2),n(7));const{w:q3}=rsvM('qf3',n(3),n(6));
+      const{w:a}=(q1&&q4)?rsvM('sf1',q1,q4):{w:null};const{w:b}=(q2&&q3)?rsvM('sf2',q2,q3):{w:null};
+      finL=a;finV=b;
+    }else{
+      // 9-10: simplificado
+      finL=order[0];finV=order[1];
+    }
+    if(finL&&finV){
+      const{w:fc,l:fs}=rsvM('fin',finL,finV,true);
+      campeon=fc;subcamp=fs;
+    }
+  }
   const hayTercero=!liga||!liga.pozo||liga.pozo.conTercero!==false;
-  if(hayTercero&&tp){const{w:tc}=rsvM('tp',order[2]||'',order[3]||'');tercero=tc;}
+  if(hayTercero&&tp){
+    // Buscar los perdedores reales de semis
+    const s=calcTabla(),ord=s.map(([n])=>n);
+    const N=liga.jugadores.length,n=i=>ord[i-1]||'';
+    let tpL=null,tpV=null;
+    if(N<=4){const{l:a}=rsvM('sf1',n(1),n(4));const{l:b}=rsvM('sf2',n(2),n(3));tpL=a;tpV=b;}
+    else if(N===5){const{w:q}=rsvM('qf1',n(4),n(5));const{l:a}=q?rsvM('sf1',n(1),q):{l:null};const{l:b}=rsvM('sf2',n(2),n(3));tpL=a;tpV=b;}
+    else if(N===6){const{w:q1}=rsvM('qf1',n(3),n(6));const{w:q2}=rsvM('qf2',n(4),n(5));const{l:a}=q1?rsvM('sf1',n(1),q1):{l:null};const{l:b}=q2?rsvM('sf2',n(2),q2):{l:null};tpL=a;tpV=b;}
+    else if(N===7){const{w:q1}=rsvM('qf1',n(2),n(7));const{w:q2}=rsvM('qf2',n(3),n(6));const{w:q3}=rsvM('qf3',n(4),n(5));const{l:a}=q1?rsvM('sf1',n(1),q1):{l:null};const{l:b}=(q2&&q3)?rsvM('sf2',q2,q3):{l:null};tpL=a;tpV=b;}
+    else if(N===8){const{w:q1}=rsvM('qf1',n(1),n(8));const{w:q4}=rsvM('qf4',n(4),n(5));const{w:q2}=rsvM('qf2',n(2),n(7));const{w:q3}=rsvM('qf3',n(3),n(6));const{l:a}=(q1&&q4)?rsvM('sf1',q1,q4):{l:null};const{l:b}=(q2&&q3)?rsvM('sf2',q2,q3):{l:null};tpL=a;tpV=b;}
+    if(tpL&&tpV){const{w:tc}=rsvM('tp',tpL,tpV);tercero=tc;}
+  }
   return{campeon,subcamp,tercero};
 }
 
