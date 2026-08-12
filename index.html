@@ -1644,7 +1644,9 @@ function abrirNuevaLiga(){
     <p>¿Tipo?</p>
     <label><input type="radio" name="tipo" value="comp" checked> 💰 Competitivo</label>
     <label><input type="radio" name="tipo" value="ami"> 🎮 Amistoso</label>
-    <div id="nl-monto-wrap" style="margin-top:8px;"><p>Monto por persona ($):</p><input type="number" id="nl-m" value="1500" min="0"></div>
+    <div id="nl-monto-wrap" style="margin-top:8px;"><p>Monto por persona ($):</p><input type="number" id="nl-m" value="2000" min="0" oninput="actualizarPreviewPremios()">
+    <div id="nl-preview" style="margin-top:6px;background:#0a1a0a;border:1px solid #333;border-radius:6px;padding:8px;font-size:.75rem;min-height:28px;"></div>
+    <button class="btn" onclick="abrirPersonalizado()" style="width:100%;margin-top:6px;font-size:.75rem;">🎨 Personalizar premios</button></div>
     <p style="margin-top:8px;">Jugadores:</p>
     <div class="jlista" id="nl-jl"></div>
     <button class="btn" onclick="addJRow()" style="width:100%;margin-bottom:7px;">+ Agregar</button>
