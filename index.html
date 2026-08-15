@@ -218,6 +218,7 @@ tbody td:first-child{text-align:left;}
   <button class="tab" onclick="showTab('copa',this)">🏆 Copa</button>
   <button class="tab" onclick="showTab('premios',this)">💰 Premios</button>
   <button class="tab" onclick="showTab('ind',this)">⭐ Indiv.</button>
+  <button class="tab" onclick="showTab('reglas',this)">📋 Reglas</button>
   <button class="tab" onclick="showTab('pred',this)">🎯 Predicc.</button>
   <button class="tab" onclick="showTab('perfiles',this)">👤 Perfiles</button>
   <button class="tab" onclick="showTab('admin',this)">⚙️ Admin</button>
@@ -238,6 +239,7 @@ tbody td:first-child{text-align:left;}
 <div id="panel-copa" class="panel"><div class="ib am" id="copa-ib"></div><div class="ib am" id="copa-terminada-note" style="display:none;">🏁 <strong>Liga terminada.</strong> Los resultados de copa están bloqueados.</div><div id="copa-con"></div><div id="copa-res" style="margin-top:12px;"></div></div>
 <div id="panel-premios" class="panel"><div id="pre-con"></div></div>
 <div id="panel-ind" class="panel"><div class="ib">Calculados <strong>automáticamente</strong>.</div><div id="ind-con"></div></div>
+<div id="panel-reglas" class="panel"><div id="reglas-con"></div></div>
 <div id="panel-pred" class="panel"><div id="pred-con"></div></div>
 <div id="panel-perfiles" class="panel"><div class="pgrid" id="p-btns"></div><div id="p-det"></div></div>
 <div id="panel-admin" class="panel"><div id="admin-content"></div></div>
@@ -474,7 +476,7 @@ async function cambiarLiga(id){
   try{liga=await cargarLigaSupabase(id);}catch(e){toast('Error cargando liga');return;}
   document.getElementById('sub').textContent=liga.jugadores.join(' · ');
   renderBannerTerminada();
-  renderFixture();renderTabla();renderPBtns();renderPred();poblarFechaSel();
+  renderFixture();renderTabla();renderPBtns();renderPred();poblarFechaSel();renderReglas();
   iniciarRealtime();
 }
 
@@ -593,7 +595,7 @@ function renderTabla(){
   }).join('');
   document.getElementById('fix-ib').innerHTML=`<strong>Todos contra todos — ida y vuelta (${liga.fixture.length} fechas)</strong><br>Los resultados se sincronizan en tiempo real.`;
   const order=sorted.map(([n])=>n),sm=Object.fromEntries(sorted);
-  renderCopa(order);renderPremios(order,sm);renderInd(sm);renderPred();
+  renderCopa(order);renderPremios(order,sm);renderInd(sm);renderPred();renderReglas();
 }
 
 /* ============================================================
@@ -1442,6 +1444,145 @@ function bestV(){
     if(m>bm){bm=m;bj=j;}
   });return{j:bj,max:bm};
 }
+function renderReglas(){
+  if(!liga)return;
+  const con=document.getElementById('reglas-con');if(!con)return;
+  const N=liga.jugadores.length;
+  const total=liga.pozo.total;
+  const ami=liga.pozo.amistoso;
+  const montos=calcMontos(total);
+  const hayT=!liga||!liga.pozo||liga.pozo.conTercero!==false;
+
+  // Copa format text
+  let copaHTML='';
+  if(N===4){
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 4.</strong></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">1° vs 4° · 2° vs 3°</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }else if(N===5){
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 5.</strong> 1°, 2° y 3° pasan directo a semis.</div>
+      <div class="pc verde"><div><div class="pct">⚔️ CUARTOS (ida y vuelta)</div>
+      <div class="pcd">4° vs 5°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">1° vs Gan(4v5) · 2° vs 3°</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }else if(N===6){
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 6.</strong> 1° y 2° pasan directo a semis.</div>
+      <div class="pc verde"><div><div class="pct">⚔️ CUARTOS (ida y vuelta)</div>
+      <div class="pcd">3° vs 6° · 4° vs 5°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">1° vs Gan(3v6) · 2° vs Gan(4v5)</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }else if(N===7){
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 7.</strong> 1° pasa directo a semis.</div>
+      <div class="pc verde"><div><div class="pct">⚔️ CUARTOS (ida y vuelta)</div>
+      <div class="pcd">2° vs 7° · 3° vs 6° · 4° vs 5°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">1° vs Gan(2v7) · Gan(3v6) vs Gan(4v5)</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }else if(N===8){
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 8. Cuartos completos.</strong></div>
+      <div class="pc verde"><div><div class="pct">⚔️ CUARTOS (ida y vuelta)</div>
+      <div class="pcd">1° vs 8° · 2° vs 7° · 3° vs 6° · 4° vs 5°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">Gan(1v8) vs Gan(4v5) · Gan(2v7) vs Gan(3v6)</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }else if(N===9){
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 9.</strong> 1°–7° pasan directo a cuartos.</div>
+      <div class="pc verde"><div><div class="pct">⚔️ OCTAVOS (ida y vuelta)</div>
+      <div class="pcd">8° vs 9°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ CUARTOS (ida y vuelta)</div>
+      <div class="pcd">1° vs Gan(8v9) · 2° vs 7° · 3° vs 6° · 4° vs 5°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">Gan QF1 vs Gan QF4 · Gan QF2 vs Gan QF3</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }else{
+    copaHTML=`
+      <div class="ib"><strong>Clasifican los 10.</strong> 1°–6° pasan directo a cuartos.</div>
+      <div class="pc verde"><div><div class="pct">⚔️ OCTAVOS (ida y vuelta)</div>
+      <div class="pcd">7° vs 10° · 8° vs 9°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ CUARTOS (ida y vuelta)</div>
+      <div class="pcd">1° vs Gan(7v10) · 2° vs Gan(8v9) · 3° vs 6° · 4° vs 5°</div></div></div>
+      <div class="pc verde"><div><div class="pct">⚔️ SEMIFINALES (ida y vuelta)</div>
+      <div class="pcd">Gan QF1 vs Gan QF4 · Gan QF2 vs Gan QF3</div></div></div>
+      <div class="pc oro"><div><div class="pct">🏆 FINAL (partido único)</div>
+      <div class="pcd">Ganador SF1 vs Ganador SF2</div></div></div>
+      ${hayT?'<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO (ida y vuelta)</div><div class="pcd">Perdedor SF1 vs Perdedor SF2</div></div></div>':''}`;
+  }
+
+  con.innerHTML=`
+    <div class="sec">⚽ LA LIGA</div>
+    <div class="pc verde"><div>
+      <div class="pct">TODOS CONTRA TODOS</div>
+      <div class="pcd">Ida y vuelta — ${liga.fixture.length} fechas en total</div>
+      <div class="pcd" style="margin-top:4px;">✅ Victoria = 3 pts &nbsp;|&nbsp; 🟡 Empate = 1 pt &nbsp;|&nbsp; ❌ Derrota = 0 pts</div>
+      <div class="pcd" style="margin-top:2px;">Desempate: diferencia de goles → goles a favor</div>
+    </div></div>
+
+    <div class="sec">🏆 LA COPA (${N} jugadores)</div>
+    ${copaHTML}
+
+    <div class="sec">💰 BOLSA DE PREMIOS</div>
+    <div class="ib${ami?' am':''}">
+      Pozo total: <strong>${ami?'AMISTOSO — sin dinero':'$'+total+' ($'+liga.pozo.porPersona+' × '+N+')'}</strong>
+    </div>
+    <div class="pc verde"><div><div class="pct">🎖️ 1° DE LA LIGA</div><div class="pcd">Mejor posición en la tabla regular</div></div><div class="pcm">${ami?'—':'$'+montos.liga1}</div></div>
+    <div class="pc oro"><div><div class="pct">🏆 CAMPEÓN COPA</div><div class="pcd">Ganador de la final</div></div><div class="pcm">${ami?'—':'$'+montos.campeon}</div></div>
+    <div class="pc plata"><div><div class="pct">🥈 SUBCAMPEÓN COPA</div><div class="pcd">Finalista</div></div><div class="pcm">${ami?'—':'$'+montos.subcamp}</div></div>
+    ${hayT&&montos.tercero>0?`<div class="pc bronce"><div><div class="pct">🥉 3ER PUESTO COPA</div><div class="pcd">Ganador del partido por el 3er puesto</div></div><div class="pcm">${ami?'—':'$'+montos.tercero}</div></div>`:''}
+
+    <div class="sec">🎮 REGLAS DEL JUEGO</div>
+    <div class="pc verde"><div>
+      <div class="pct">⏱️ DURACIÓN</div>
+      <div class="pcd">Partidos de <strong style="color:var(--bl)">10 minutos</strong></div>
+    </div></div>
+    <div class="pc verde"><div>
+      <div class="pct">👟 ESTADO DE JUGADORES</div>
+      <div class="pcd">Los jugadores deben estar en estado <strong style="color:var(--bl)">Excelente</strong> al crear la partida</div>
+    </div></div>
+    <div class="pc oro"><div>
+      <div class="pct">🚪 ABANDONO DE PARTIDA</div>
+      <div class="pcd">Si un jugador se sale en medio del partido, el rival gana automáticamente los <strong style="color:var(--bl)">3 puntos</strong> más los goles que ya había hecho</div>
+    </div></div>
+    <div class="pc plata"><div>
+      <div class="pct">📶 PÉRDIDA DE CONEXIÓN</div>
+      <div class="pcd">Si el partido se corta por conexión, queda a <strong style="color:var(--bl)">criterio del rival</strong> si quiere repetirlo o no</div>
+    </div></div>
+
+    <div class="sec">👀 QUÉ PUEDEN VER TODOS</div>
+    <div class="ib">
+      <strong>Cualquiera que entre al link puede ver:</strong><br>
+      📊 Tabla de posiciones en tiempo real<br>
+      📈 Cómo iba la tabla fecha por fecha<br>
+      📅 Fixture con todos los resultados<br>
+      🏆 Estado de la copa y el bracket<br>
+      💰 Bolsa de premios y quién gana qué<br>
+      ⭐ Premios individuales (goleador, MVP, etc.)<br>
+      👤 Perfiles de cada jugador con estadísticas<br>
+      🎯 Ranking de predicciones<br><br>
+      <strong>Solo el admin puede:</strong> cargar resultados, crear ligas y gestionar premios.
+    </div>`;
+}
+
 function renderInd(sm){
   const pr=calcInd(sm);
   document.getElementById('ind-con').innerHTML=pr.map(p=>`<div class="pi"><div class="pi-i">${p.i}</div><div><div class="pi-n">${p.n}</div><div class="pi-d">${p.d}</div></div><div class="pi-w">${p.g}</div></div>`).join('');
