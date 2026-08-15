@@ -194,6 +194,56 @@ tbody td:first-child{text-align:left;}
 .jrow{display:flex;gap:5px;align-items:center;}
 .jrow input{flex:1;margin-bottom:0;}
 .jrow .btn{padding:5px 8px;font-size:.72rem;}
+
+/* FOTO PERFIL */
+.avatar-img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--gb);margin-right:6px;vertical-align:middle;}
+.avatar-img-lg{width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--v);margin-bottom:8px;}
+.foto-perfil-btn{background:var(--gm);border:1px dashed var(--gb);color:var(--gt);padding:6px 12px;border-radius:5px;font-size:.75rem;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:6px;}
+.foto-perfil-btn:hover{border-color:var(--v);color:var(--bl);}
+/* INSIGNIAS */
+.insignia{display:inline-flex;align-items:center;gap:5px;background:#161616;border:1px solid var(--gb);border-radius:20px;padding:4px 10px;font-size:.72rem;margin:3px;}
+.insignia.gold{border-color:var(--am);background:rgba(255,215,0,.08);}
+.insignia.green{border-color:var(--v);background:rgba(0,255,135,.08);}
+.insignia.red{border-color:var(--rd);background:rgba(255,107,107,.08);}
+.insignia.purple{border-color:#a855f7;background:rgba(168,85,247,.08);}
+/* VOTOS SOFASCORE */
+.voto-wrap{margin-top:6px;border-radius:6px;overflow:hidden;}
+.voto-toggle{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#111;cursor:pointer;font-size:.72rem;color:var(--gt);border:1px solid var(--gb);border-radius:5px;}
+.voto-toggle:hover{border-color:var(--v);}
+.voto-content{display:none;background:#111;border:1px solid var(--gb);border-top:none;border-radius:0 0 5px 5px;padding:8px 10px;}
+.voto-content.open{display:block;}
+.voto-bar-wrap{display:flex;gap:3px;height:6px;border-radius:3px;overflow:hidden;margin-bottom:8px;}
+.voto-bar-l{background:var(--v);transition:width .5s;}
+.voto-bar-e{background:var(--am);transition:width .5s;}
+.voto-bar-v{background:var(--rd);transition:width .5s;}
+.voto-opciones{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:6px;}
+.voto-btn{padding:8px 4px;border-radius:5px;border:1px solid var(--gb);background:var(--n);color:var(--bl);font-size:.75rem;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;}
+.voto-btn:hover{border-color:var(--v);}
+.voto-btn.selected-l{border-color:var(--v);background:rgba(0,255,135,.15);color:var(--v);}
+.voto-btn.selected-e{border-color:var(--am);background:rgba(255,215,0,.15);color:var(--am);}
+.voto-btn.selected-v{border-color:var(--rd);background:rgba(255,107,107,.15);color:var(--rd);}
+.voto-btn:disabled{opacity:.4;cursor:not-allowed;}
+.voto-pct{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:.7rem;text-align:center;color:var(--gt);}
+.voto-pin-row{display:flex;gap:5px;align-items:center;margin-top:5px;}
+.voto-pin-inp{flex:1;background:var(--n);border:1px solid var(--gb);color:var(--bl);padding:5px 8px;border-radius:5px;font-size:.82rem;outline:none;letter-spacing:3px;}
+.voto-pin-inp:focus{border-color:var(--v);}
+.voto-pin-btn{background:var(--v);border:none;color:var(--n);padding:5px 12px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:.8rem;cursor:pointer;}
+/* GRAFICO */
+.grafico-wrap{width:100%;overflow-x:auto;margin-top:10px;}
+.toggle-vista{display:flex;gap:6px;margin-bottom:12px;}
+.toggle-btn{padding:6px 14px;border-radius:5px;border:1px solid var(--gb);background:var(--gm);color:var(--gt);font-family:'Bebas Neue',sans-serif;font-size:.8rem;cursor:pointer;letter-spacing:1px;}
+.toggle-btn.active{background:var(--v);color:var(--n);border-color:var(--v);}
+/* HALL OF FAME */
+.hof-card{background:var(--gm);border:1px solid var(--gb);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.hof-num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gt);width:30px;}
+.hof-liga{font-size:.72rem;color:var(--gt);}
+.hof-nombre{font-weight:700;font-size:.9rem;}
+.record-card{background:var(--gm);border:1px solid var(--gb);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.record-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--v);}
+/* H2H BUSCADOR */
+.h2h-sel{background:var(--gm);border:1px solid var(--gb);color:var(--bl);padding:8px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.85rem;flex:1;}
+.h2h-vs{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gt);}
+
 @media(max-width:480px){.partido{grid-template-columns:1fr;}.tl,.tv{text-align:center;}}
 </style>
 </head>
@@ -219,7 +269,8 @@ tbody td:first-child{text-align:left;}
   <button class="tab" onclick="showTab('premios',this)">💰 Premios</button>
   <button class="tab" onclick="showTab('ind',this)">⭐ Indiv.</button>
   <button class="tab" onclick="showTab('reglas',this)">📋 Reglas</button>
-  <button class="tab" onclick="showTab('pred',this)">🎯 Predicc.</button>
+  <button class="tab" onclick="showTab('pred',this)">🗳️ Votos</button>
+  <button class="tab" onclick="showTab('hof',this)">🥇 Hall</button>
   <button class="tab" onclick="showTab('perfiles',this)">👤 Perfiles</button>
   <button class="tab" onclick="showTab('admin',this)">⚙️ Admin</button>
 </div>
@@ -229,11 +280,21 @@ tbody td:first-child{text-align:left;}
   <p style="text-align:center;color:var(--gt);font-size:.73rem;margin-top:10px;">Los resultados se actualizan en tiempo real.</p>
 </div>
 <div id="panel-tablafecha" class="panel">
-  <div class="fecha-sel-wrap">
-    <span style="font-size:.82rem;color:var(--gt);">Ver tabla al final de la fecha:</span>
-    <select class="fecha-sel" id="fecha-sel" onchange="renderTablaFecha()"></select>
+  <div class="toggle-vista">
+    <button class="toggle-btn active" id="btn-tabla-vista" onclick="switchVista('tabla')">📊 Tabla</button>
+    <button class="toggle-btn" id="btn-grafico-vista" onclick="switchVista('grafico')">📈 Gráfico</button>
   </div>
-  <div class="tw"><table><thead><tr><th>Jugador</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr></thead><tbody id="tbody-fecha"></tbody></table></div>
+  <div id="vista-tabla">
+    <div class="fecha-sel-wrap">
+      <span style="font-size:.82rem;color:var(--gt);">Ver tabla al final de la fecha:</span>
+      <select class="fecha-sel" id="fecha-sel" onchange="renderTablaFecha()"></select>
+    </div>
+    <div class="tw"><table><thead><tr><th>Jugador</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr></thead><tbody id="tbody-fecha"></tbody></table></div>
+  </div>
+  <div id="vista-grafico" style="display:none;">
+    <div class="grafico-wrap"><canvas id="grafico-pts" height="300"></canvas></div>
+    <div id="grafico-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+  </div>
 </div>
 <div id="panel-fixture" class="panel"><div class="ib" id="fix-ib"></div><div id="fix-con"></div></div>
 <div id="panel-copa" class="panel"><div class="ib am" id="copa-ib"></div><div class="ib am" id="copa-terminada-note" style="display:none;">🏁 <strong>Liga terminada.</strong> Los resultados de copa están bloqueados.</div><div id="copa-con"></div><div id="copa-res" style="margin-top:12px;"></div></div>
@@ -241,6 +302,7 @@ tbody td:first-child{text-align:left;}
 <div id="panel-ind" class="panel"><div class="ib">Calculados <strong>automáticamente</strong>.</div><div id="ind-con"></div></div>
 <div id="panel-reglas" class="panel"><div id="reglas-con"></div></div>
 <div id="panel-pred" class="panel"><div id="pred-con"></div></div>
+<div id="panel-hof" class="panel"><div id="hof-con"></div></div>
 <div id="panel-perfiles" class="panel"><div class="pgrid" id="p-btns"></div><div id="p-det"></div></div>
 <div id="panel-admin" class="panel"><div id="admin-content"></div></div>
 <div class="toast" id="toast"></div>
@@ -253,6 +315,7 @@ tbody td:first-child{text-align:left;}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
 /* ============================================================
@@ -380,7 +443,9 @@ async function cargarLigaSupabase(id){
     terminada:data.terminada||false,
     predicciones:data.predicciones||{},
     pins:data.pins||{},
-    fotos:data.fotos||{}
+    fotos:data.fotos||{},
+    votos:data.votos||{},
+    fotosJugadores:data.fotos_jugadores||{}
   };
 }
 
@@ -394,6 +459,8 @@ async function guardarEnSupabase(extra){
       predicciones:liga.predicciones||{},
       pins:liga.pins||{},
       fotos:liga.fotos||{},
+      votos:liga.votos||{},
+      fotos_jugadores:liga.fotosJugadores||{},
       ...(extra||{})
     };
     const{error}=await supaClient.from('ligas').update(payload).eq('id',liga.id);
@@ -421,7 +488,7 @@ function iniciarRealtime(){
 async function crearLigaSupabase(nombre,jugadores,mezclar,porPersona,amistoso,conTercero=true,pctg=null,montos=null){
   const total=amistoso?0:jugadores.length*porPersona;
   const obj={nombre,jugadores,fixture:genFixture(jugadores,mezclar),
-    resultados:{},copa:{},predicciones:{},pins:{},fotos:{},terminada:false,
+    resultados:{},copa:{},predicciones:{},pins:{},fotos:{},votos:{},fotos_jugadores:{},terminada:false,
     pozo:{total,porPersona:Math.round(total/jugadores.length),amistoso:!!amistoso,conTercero:conTercero!==false,pctg:pctg||PCTG_CON_TERCERO,...(montos?{montos}:{})},trofeos:[]};
   const{data,error}=await supaClient.from('ligas').insert([obj]).select().single();
   if(error)throw error;
@@ -584,8 +651,9 @@ function renderTabla(){
   document.getElementById('tbody').innerHTML=sorted.map(([n,s],i)=>{
     const racha=calcRachaActual(s.partidos);
     const rachaHtml=racha.length?`<div class="racha">${racha.map(r=>`<span class="rc ${r}"></span>`).join('')}</div>`:'<span style="color:var(--gt);font-size:.65rem;">—</span>';
+    const fotoJug=getFotoJugador(n);
     return`<tr class="${i===0?'hl':''}">
-      <td><span class="pb ${bdg[i]||'px'}">${i+1}</span><span class="pn">${n}</span></td>
+      <td><span class="pb ${bdg[i]||'px'}">${i+1}</span>${fotoJug?`<img src="${fotoJug}" class="avatar-img">`:''}<span class="pn">${n}</span></td>
       <td>${rachaHtml}</td>
       <td>${s.pj}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td>
       <td>${s.gf}</td><td>${s.gc}</td>
@@ -787,6 +855,7 @@ function renderFixture(){
         </div>
         <span class="tv">${p.V}</span>
       </div>
+      ${renderVotos(key,p.L,p.V,jugado)}
       ${jugado&&isAdmin?`<div style="text-align:right;margin:-2px 0 6px;">
         <button onclick="notifManualPartido('${p.L}','${p.V}','${res.gl}','${res.gv}','liga')" style="background:none;border:1px solid var(--gb);color:var(--gt);padding:3px 8px;border-radius:4px;font-size:.65rem;cursor:pointer;">🔔 Enviar notif</button>
       </div>`:''}
@@ -1658,7 +1727,16 @@ async function showPerfil(nombre,btn){
     const[r,cls]=p.gf>p.gc?['W','W']:p.gf<p.gc?['L','L']:['E','E'];
     return`<div class="hp"><span>vs ${p.rival}</span><span>${p.gf}–${p.gc}</span><span class="${cls}">${r}</span></div>`;
   };
-  let html=`<div class="sec">${av} ${nombre}</div>
+  const fotoP=getFotoJugador(nombre);
+  const trofeosFiltrados=trofeos;
+  const insignias=calcInsignias(nombre,sm,trofeos);
+  let html=`<div style="text-align:center;margin-bottom:12px;">
+    ${fotoP?`<img src="${fotoP}" class="avatar-img-lg"><br>`:''}
+    <label class="foto-perfil-btn">📷 ${fotoP?'Cambiar foto':'Subir foto'}
+      <input type="file" accept="image/*" style="display:none" onchange="cambiarFotoPerfil('${nombre}',this)">
+    </label>
+  </div>
+  <div class="sec">${av} ${nombre}</div>
   <div class="sgrid">
     <div class="sc2"><div class="sl">Posición</div><div class="sv sn">${pos}°</div></div>
     <div class="sc2"><div class="sl">Puntos</div><div class="sv">${s.pts}</div></div>
@@ -1669,6 +1747,14 @@ async function showPerfil(nombre,btn){
     <div class="sc2"><div class="sl">Predicc. pts</div><div class="sv">${predStats.pts}</div></div>
     <div class="sc2"><div class="sl">Exactos 🎯</div><div class="sv sn">${predStats.exactos}</div></div>
   </div>`;
+  // Insignias
+  if(insignias.length>0){
+    html+=`<div class="sec">🏅 INSIGNIAS</div><div style="margin-bottom:10px;">`;
+    insignias.forEach(ins=>{
+      html+=`<span class="insignia ${ins.cls}">${ins.ico} ${ins.label}</span>`;
+    });
+    html+=`</div>`;
+  }
   // Familia
   html+=`<div class="familia-box"><div class="familia-titulo">👨‍👦 ÁRBOL FAMILIAR</div>`;
   html+=fam.papa?`<div class="familia-row"><span>Papá de ${nombre}</span><span>${fam.papa} <span class="papa-tag">PAPÁ</span> (${fam.papaScore})</span></div>`
@@ -1930,6 +2016,426 @@ function showTab(name,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   el.classList.add('active');
+  if(name==='hof')renderHOF();
+}
+
+/* ============================================================
+   FOTO DE PERFIL POR JUGADOR
+   ============================================================ */
+function getFotoJugador(nombre){
+  return liga?.fotosJugadores?.[nombre]||null;
+}
+
+async function cambiarFotoPerfil(nombre,inputEl){
+  const file=inputEl.files[0];if(!file)return;
+  if(file.size>1.5*1024*1024){toast('Foto muy grande (máx 1.5MB)');return;}
+  toast('Subiendo...');
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    if(!liga.fotosJugadores)liga.fotosJugadores={};
+    liga.fotosJugadores[nombre]=e.target.result;
+    await guardarEnSupabase();
+    renderTabla();renderPBtns();
+    // Refresh perfil if open
+    const btn=document.querySelector(`.pbtn.active`);
+    if(btn)showPerfil(nombre,btn);
+    toast('✓ Foto actualizada');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   INSIGNIAS AUTOMÁTICAS
+   ============================================================ */
+function calcInsignias(nombre,sm,trofeos){
+  const s=sm[nombre];if(!s)return[];
+  const ins=[];
+  const dineroTotal=(trofeos||[]).filter(t=>t.tipo==='competitivo').reduce((a,t)=>a+(t.dinero||0),0);
+  const campeones=(trofeos||[]).filter(t=>t.tipo_premio==='campeon_copa').length;
+  const liga1s=(trofeos||[]).filter(t=>t.tipo_premio==='liga1').length;
+
+  // Liga
+  if(s.pj>=6&&s.g/s.pj>=0.7)ins.push({ico:'👑',label:'Dominador',desc:'70%+ victorias',cls:'gold'});
+  if(s.gc===0&&s.pj>=4)ins.push({ico:'🛡️',label:'Muro',desc:'Sin goles en contra',cls:'green'});
+  if(s.gf>=30)ins.push({ico:'💣',label:'Artillero',desc:'30+ goles',cls:'red'});
+  if(s.p===0&&s.pj>=4)ins.push({ico:'🔥',label:'Invicto',desc:'Sin derrotas',cls:'green'});
+  if(s.e===0&&s.pj>=6)ins.push({ico:'⚡',label:'Sin Empates',desc:'Todo o nada',cls:'purple'});
+  // Rachas
+  const racha=calcRachaActual(s.partidos);
+  const rachaV=racha.filter(r=>r==='W').length;
+  if(rachaV>=3)ins.push({ico:'🔴',label:`Racha x${rachaV}`,desc:'Victorias seguidas',cls:'red'});
+  // Histórico
+  if(campeones>=1)ins.push({ico:'🏆',label:'Campeón',desc:`${campeones} copa${campeones>1?'s':''}`,cls:'gold'});
+  if(liga1s>=1)ins.push({ico:'🎖️',label:'1° Liga',desc:`${liga1s} vez${liga1s>1?'ces':''}`,cls:'gold'});
+  if(dineroTotal>=5000)ins.push({ico:'💰',label:'Millonario',desc:`$${dineroTotal} ganados`,cls:'gold'});
+  // Goleadas
+  let maxGoles=0;
+  liga.fixture.forEach(jorn=>jorn.ps.forEach(p=>{
+    const k=`j${jorn.f}_${p.L}_${p.V}`;const r=liga.resultados[k];
+    if(!r||r.gl===''||r.gv==='')return;
+    const gl=parseInt(r.gl),gv=parseInt(r.gv);
+    if(p.L===nombre&&gl-gv>=4)maxGoles=Math.max(maxGoles,gl-gv);
+    if(p.V===nombre&&gv-gl>=4)maxGoles=Math.max(maxGoles,gv-gl);
+  }));
+  if(maxGoles>=4)ins.push({ico:'💥',label:'Goleador',desc:`Goleada de +4`,cls:'red'});
+  return ins;
+}
+
+/* ============================================================
+   VOTOS ESTILO SOFASCORE
+   ============================================================ */
+function calcPorcentajesVoto(local,visitante){
+  // Basado en H2H + posición tabla actual
+  const sorted=calcTabla(),sm=Object.fromEntries(sorted),order=sorted.map(([n])=>n);
+  const posL=order.indexOf(local)+1||99,posV=order.indexOf(visitante)+1||99;
+  const sL=sm[local]||{pj:0,g:0,pts:0},sV=sm[visitante]||{pj:0,g:0,pts:0};
+  // H2H
+  const{w1,w2,emp}=getH2H(local,visitante);
+  const totalH2H=w1+w2+emp;
+  // Calcular score
+  let scoreL=50,scoreV=50;
+  // Por posición en tabla
+  scoreL+=Math.min((posV-posL)*3,20);
+  // Por rendimiento
+  if(sL.pj>0)scoreL+=((sL.g/sL.pj)-0.5)*20;
+  if(sV.pj>0)scoreV+=((sV.g/sV.pj)-0.5)*20;
+  // Por H2H
+  if(totalH2H>0){scoreL+=(w1/totalH2H)*15;scoreV+=(w2/totalH2H)*15;}
+  // Normalizar
+  const total=scoreL+scoreV;
+  const pL=Math.max(Math.min(Math.round(scoreL/total*80),75),10);
+  const pV=Math.max(Math.min(Math.round(scoreV/total*80),75),10);
+  const pE=Math.max(100-pL-pV,5);
+  return{l:pL,e:pE,v:pV};
+}
+
+function renderVotos(key,local,visitante,jugado){
+  if(!liga)return'';
+  const votos=liga.votos?.[key]||{l:[],e:[],v:[]};
+  const tL=votos.l?.length||0,tE=votos.e?.length||0,tV=votos.v?.length||0;
+  const total=tL+tE+tV;
+  const pcts=calcPorcentajesVoto(local,visitante);
+  // Si hay votos suficientes usar votos reales, sino usar algoritmo
+  const dispL=total>=2?Math.round(tL/total*100):pcts.l;
+  const dispE=total>=2?Math.round(tE/total*100):pcts.e;
+  const dispV=total>=2?100-dispL-dispE:pcts.v;
+
+  if(jugado){
+    // Solo mostrar porcentajes finales
+    return`<div class="voto-wrap">
+      <div class="voto-toggle" onclick="toggleVotoPanel('${key}')">
+        <span>🗳️ Quién ganará — ${total} voto${total!==1?'s':''}</span><span>▼</span>
+      </div>
+      <div class="voto-content" id="vp_${key}">
+        <div class="voto-bar-wrap">
+          <div class="voto-bar-l" style="width:${dispL}%"></div>
+          <div class="voto-bar-e" style="width:${dispE}%"></div>
+          <div class="voto-bar-v" style="width:${dispV}%"></div>
+        </div>
+        <div class="voto-pct">
+          <span style="color:var(--v)">${dispL}%</span>
+          <span style="color:var(--am)">${dispE}%</span>
+          <span style="color:var(--rd)">${dispV}%</span>
+        </div>
+        <div class="voto-pct" style="margin-top:2px;">
+          <span>${local}</span><span>Empate</span><span>${visitante}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Partido no jugado — mostrar form de voto
+  const pins=liga.pins||{};
+  const conPin=Object.keys(pins).length>0;
+  return`<div class="voto-wrap">
+    <div class="voto-toggle" onclick="toggleVotoPanel('${key}')">
+      <span>🗳️ ¿Quién ganará? — ${total} voto${total!==1?'s':''}</span><span id="vtog_${key}">▼</span>
+    </div>
+    <div class="voto-content" id="vp_${key}">
+      <div class="voto-bar-wrap" style="margin-bottom:6px;">
+        <div class="voto-bar-l" style="width:${dispL}%"></div>
+        <div class="voto-bar-e" style="width:${dispE}%"></div>
+        <div class="voto-bar-v" style="width:${dispV}%"></div>
+      </div>
+      <div class="voto-pct" style="margin-bottom:8px;">
+        <span style="color:var(--v)">${dispL}%</span>
+        <span style="color:var(--am)">${dispE}%</span>
+        <span style="color:var(--rd)">${dispV}%</span>
+      </div>
+      <div class="voto-opciones">
+        <button class="voto-btn" id="vb_${key}_l" onclick="selVoto('${key}','l','${local}','${visitante}')">🟢 ${local}</button>
+        <button class="voto-btn" id="vb_${key}_e" onclick="selVoto('${key}','e','${local}','${visitante}')">🟡 Empate</button>
+        <button class="voto-btn" id="vb_${key}_v" onclick="selVoto('${key}','v','${local}','${visitante}')">🔴 ${visitante}</button>
+      </div>
+      ${conPin?`<div class="voto-pin-row">
+        <select class="pred-sel" id="vsel_${key}"><option value="">Tu nombre</option>${liga.jugadores.map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+        <input type="password" maxlength="10" class="voto-pin-inp" id="vpin_${key}" placeholder="PIN">
+        <button class="voto-pin-btn" onclick="confirmarVoto('${key}','${local}','${visitante}')">→</button>
+      </div>`:`<div class="voto-pin-row">
+        <select class="pred-sel" id="vsel_${key}"><option value="">Tu nombre</option>${liga.jugadores.map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+        <button class="voto-pin-btn" onclick="confirmarVoto('${key}','${local}','${visitante}')">Votar →</button>
+      </div>`}
+      <div id="vmsg_${key}" style="font-size:.7rem;color:var(--gt);margin-top:4px;"></div>
+    </div>
+  </div>`;
+}
+
+let _votoSeleccionado={};
+function selVoto(key,tipo,local,visitante){
+  _votoSeleccionado[key]=tipo;
+  ['l','e','v'].forEach(t=>{
+    const btn=document.getElementById(`vb_${key}_${t}`);
+    if(btn){btn.className='voto-btn'+(t===tipo?' selected-'+t:'');}
+  });
+}
+
+function toggleVotoPanel(key){
+  const el=document.getElementById('vp_'+key);
+  const tog=document.getElementById('vtog_'+key);
+  if(!el)return;
+  el.classList.toggle('open');
+  if(tog)tog.textContent=el.classList.contains('open')?'▲':'▼';
+}
+
+async function confirmarVoto(key,local,visitante){
+  const jugador=document.getElementById('vsel_'+key)?.value;
+  const pin=document.getElementById('vpin_'+key)?.value||'';
+  const tipo=_votoSeleccionado[key];
+  const msg=document.getElementById('vmsg_'+key);
+
+  if(!jugador){if(msg)msg.textContent='Elegí tu nombre';return;}
+  if(!tipo){if(msg)msg.textContent='Elegí quién ganará';return;}
+
+  // Verificar PIN
+  const pins=liga.pins||{};
+  if(Object.keys(pins).length>0){
+    if(!pins[jugador]){if(msg)msg.textContent='❌ Este jugador no tiene PIN';return;}
+    if(String(pins[jugador])!==String(pin)){if(msg)msg.textContent='❌ PIN incorrecto';return;}
+  }
+
+  // Verificar que el partido no tenga resultado
+  const res=liga.resultados[key];
+  if(res&&res.gl!==''&&res.gv!==''){if(msg)msg.textContent='Partido ya terminado';return;}
+
+  if(!liga.votos)liga.votos={};
+  if(!liga.votos[key])liga.votos[key]={l:[],e:[],v:[]};
+
+  // Verificar si ya votó
+  const yaVoto=['l','e','v'].some(t=>liga.votos[key][t]?.includes(jugador));
+  if(yaVoto){if(msg)msg.textContent='✓ Ya votaste en este partido';return;}
+
+  liga.votos[key][tipo].push(jugador);
+  await guardarEnSupabase();
+  renderFixture();
+  toast(`✓ Voto de ${jugador} registrado`);
+}
+
+/* ============================================================
+   GRÁFICO DE EVOLUCIÓN
+   ============================================================ */
+let _chartInstance=null;
+const CHART_COLORS=['#00FF87','#FFD700','#ff6b6b','#a855f7','#38bdf8','#f97316','#10b981'];
+
+function switchVista(modo){
+  document.getElementById('vista-tabla').style.display=modo==='tabla'?'block':'none';
+  document.getElementById('vista-grafico').style.display=modo==='grafico'?'block':'none';
+  document.getElementById('btn-tabla-vista').className='toggle-btn'+(modo==='tabla'?' active':'');
+  document.getElementById('btn-grafico-vista').className='toggle-btn'+(modo==='grafico'?' active':'');
+  if(modo==='grafico')renderGrafico();
+}
+
+function renderGrafico(){
+  if(!liga)return;
+  const jugadores=liga.jugadores;
+  const fechas=liga.fixture.map(j=>j.f);
+  // Calcular puntos acumulados por fecha
+  const datasets=jugadores.map((jugador,idx)=>{
+    let pts=0;
+    const data=fechas.map(f=>{
+      liga.fixture.filter(j=>j.f<=f).forEach(jorn=>{
+        if(jorn.f!==f)return;// solo sumar la fecha actual
+        jorn.ps.forEach(p=>{
+          const key=`j${jorn.f}_${p.L}_${p.V}`;
+          const res=liga.resultados[key];
+          if(!res||res.gl===''||res.gv==='')return;
+          const gl=parseInt(res.gl),gv=parseInt(res.gv);if(isNaN(gl)||isNaN(gv))return;
+          if(p.L===jugador){if(gl>gv)pts+=3;else if(gl===gv)pts+=1;}
+          if(p.V===jugador){if(gv>gl)pts+=3;else if(gl===gv)pts+=1;}
+        });
+      });
+      return pts;
+    });
+    return{label:jugador,data,borderColor:CHART_COLORS[idx%CHART_COLORS.length],backgroundColor:'transparent',tension:.3,pointRadius:4};
+  });
+
+  const canvas=document.getElementById('grafico-pts');if(!canvas)return;
+  if(_chartInstance)_chartInstance.destroy();
+  _chartInstance=new Chart(canvas,{
+    type:'line',
+    data:{labels:fechas.map(f=>`F${f}`),datasets},
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false},tooltip:{mode:'index'}},
+      scales:{
+        x:{grid:{color:'#2a2a2a'},ticks:{color:'#888'}},
+        y:{grid:{color:'#2a2a2a'},ticks:{color:'#888'},beginAtZero:true}
+      }
+    }
+  });
+  // Leyenda custom
+  const leg=document.getElementById('grafico-legend');
+  if(leg)leg.innerHTML=jugadores.map((j,i)=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;"><span style="width:12px;height:12px;border-radius:50%;background:${CHART_COLORS[i%CHART_COLORS.length]};display:inline-block;"></span>${j}</span>`).join('');
+}
+
+/* ============================================================
+   HALL OF FAME + HISTÓRICO + RÉCORDS
+   ============================================================ */
+async function renderHOF(){
+  const con=document.getElementById('hof-con');if(!con)return;
+  con.innerHTML='<div style="color:var(--gt);padding:12px;">Cargando...</div>';
+  let todasLigas=[];
+  try{
+    const{data}=await supaClient.from('ligas').select('*').order('created_at',{ascending:true});
+    if(data)todasLigas=data;
+  }catch(e){con.innerHTML='<div class="ib">Error cargando datos históricos.</div>';return;}
+
+  // Hall of fame
+  let hofHTML='<div class="sec">🥇 HALL OF FAME</div>';
+  const campeonesLiga=[],campeonesLigaCopa=[];
+  todasLigas.forEach(l=>{
+    (l.trofeos||[]).forEach(t=>{
+      if(t.tipo_premio==='campeon_copa')campeonesLigaCopa.push({liga:l.nombre,jugador:t.jugador,tipo:'Copa'});
+      if(t.tipo_premio==='liga1')campeonesLiga.push({liga:l.nombre,jugador:t.jugador,tipo:'Liga'});
+    });
+  });
+  if(campeonesLiga.length===0&&campeonesLigaCopa.length===0){
+    hofHTML+='<div class="ib">Todavía no hay campeones registrados. Guardá los trofeos al terminar cada liga.</div>';
+  }else{
+    hofHTML+='<div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin-bottom:6px;">🎖️ CAMPEONES DE LIGA</div>';
+    campeonesLiga.forEach((c,i)=>{
+      hofHTML+=`<div class="hof-card"><div class="hof-num">${i+1}</div><div><div class="hof-nombre">${c.jugador}</div><div class="hof-liga">${c.liga}</div></div><div style="margin-left:auto;font-size:1.2rem;">🎖️</div></div>`;
+    });
+    hofHTML+='<div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin:10px 0 6px;">🏆 CAMPEONES DE COPA</div>';
+    campeonesLigaCopa.forEach((c,i)=>{
+      hofHTML+=`<div class="hof-card"><div class="hof-num">${i+1}</div><div><div class="hof-nombre">${c.jugador}</div><div class="hof-liga">${c.liga}</div></div><div style="margin-left:auto;font-size:1.2rem;">🏆</div></div>`;
+    });
+  }
+
+  // Tabla histórica acumulada
+  hofHTML+='<div class="sec">📈 TABLA HISTÓRICA</div>';
+  const hist={};
+  todasLigas.forEach(l=>{
+    const jug=l.jugadores||[];
+    jug.forEach(j=>{if(!hist[j])hist[j]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+    (l.fixture||[]).forEach(jorn=>{
+      (jorn.ps||[]).forEach(p=>{
+        const key=`j${jorn.f}_${p.L}_${p.V}`;
+        const res=(l.resultados||{})[key];
+        if(!res||res.gl===''||res.gv==='')return;
+        const gl=parseInt(res.gl),gv=parseInt(res.gv);if(isNaN(gl)||isNaN(gv))return;
+        [[p.L,gl,gv],[p.V,gv,gl]].forEach(([jj,gf,gc])=>{
+          if(!hist[jj])hist[jj]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+          hist[jj].pj++;hist[jj].gf+=gf;hist[jj].gc+=gc;
+          if(gf>gc){hist[jj].g++;hist[jj].pts+=3;}else if(gc>gf)hist[jj].p++;else{hist[jj].e++;hist[jj].pts++;}
+        });
+      });
+    });
+  });
+  const sortedHist=Object.entries(hist).filter(([,s])=>s.pj>0).sort((a,b)=>b[1].pts-a[1].pts);
+  const bdg=['p1','p2','p3'];
+  hofHTML+=`<div class="tw"><table><thead><tr><th>Jugador</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr></thead><tbody>
+    ${sortedHist.map(([n,s],i)=>`<tr class="${i===0?'hl':''}"><td><span class="pb ${bdg[i]||'px'}">${i+1}</span><span class="pn">${n}</span></td>
+    <td>${s.pj}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td><td>${s.gf}</td><td>${s.gc}</td>
+    <td>${s.gf-s.gc>0?'+':''}${s.gf-s.gc}</td><td class="pts">${s.pts}</td></tr>`).join('')}
+  </tbody></table></div>`;
+
+  // Récords históricos
+  hofHTML+='<div class="sec">⚡ RÉCORDS</div>';
+  let mayorGoleada=null,maxGoles=0,mejorRacha=null,maxRacha=0,masGoles=null,maxGoleador=0;
+  const golesPorJugador={};
+  todasLigas.forEach(l=>{
+    (l.fixture||[]).forEach(jorn=>{
+      (jorn.ps||[]).forEach(p=>{
+        const key=`j${jorn.f}_${p.L}_${p.V}`;
+        const res=(l.resultados||{})[key];
+        if(!res||res.gl===''||res.gv==='')return;
+        const gl=parseInt(res.gl),gv=parseInt(res.gv);if(isNaN(gl)||isNaN(gv))return;
+        if(gl+gv>maxGoles){maxGoles=gl+gv;mayorGoleada={L:p.L,V:p.V,gl,gv,liga:l.nombre,f:jorn.f};}
+        if(!golesPorJugador[p.L])golesPorJugador[p.L]=0;
+        if(!golesPorJugador[p.V])golesPorJugador[p.V]=0;
+        golesPorJugador[p.L]+=gl;golesPorJugador[p.V]+=gv;
+      });
+    });
+    // Rachas
+    (l.jugadores||[]).forEach(j=>{
+      const partidos=[];
+      (l.fixture||[]).forEach(jorn=>{
+        (jorn.ps||[]).forEach(p=>{
+          const key=`j${jorn.f}_${p.L}_${p.V}`;
+          const res=(l.resultados||{})[key];
+          if(!res||res.gl===''||res.gv==='')return;
+          const gl=parseInt(res.gl),gv=parseInt(res.gv);if(isNaN(gl)||isNaN(gv))return;
+          if(p.L===j)partidos.push({f:jorn.f,gf:gl,gc:gv});
+          if(p.V===j)partidos.push({f:jorn.f,gf:gv,gc:gl});
+        });
+      });
+      partidos.sort((a,b)=>a.f-b.f);
+      let r=0;
+      partidos.forEach(p=>{if(p.gf>p.gc){r++;if(r>maxRacha){maxRacha=r;mejorRacha={j,liga:l.nombre,racha:r};}}else r=0;});
+    });
+  });
+  const topGoleador=Object.entries(golesPorJugador).sort((a,b)=>b[1]-a[1])[0];
+  hofHTML+=`
+    <div class="record-card"><div><div class="pct">⚽ Mayor cantidad de goles (partido)</div><div class="pcd">${mayorGoleada?`${mayorGoleada.L} ${mayorGoleada.gl}-${mayorGoleada.gv} ${mayorGoleada.V} — ${mayorGoleada.liga}`:'-'}</div></div><div class="record-val">${maxGoles}</div></div>
+    <div class="record-card"><div><div class="pct">🔥 Mejor racha de victorias</div><div class="pcd">${mejorRacha?`${mejorRacha.j} — ${mejorRacha.liga}`:'-'}</div></div><div class="record-val">${maxRacha}</div></div>
+    <div class="record-card"><div><div class="pct">🎯 Máximo goleador histórico</div><div class="pcd">${topGoleador?topGoleador[0]:'-'}</div></div><div class="record-val">${topGoleador?topGoleador[1]:0}</div></div>`;
+
+  // H2H buscador
+  hofHTML+=`<div class="sec">🔍 H2H ENTRE DOS JUGADORES</div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <select class="h2h-sel" id="h2h-j1" onchange="renderH2HHistorico()"><option value="">Jugador 1</option>${Object.keys(hist).map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+    <span class="h2h-vs">VS</span>
+    <select class="h2h-sel" id="h2h-j2" onchange="renderH2HHistorico()"><option value="">Jugador 2</option>${Object.keys(hist).map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+  </div>
+  <div id="h2h-resultado"></div>`;
+
+  con.innerHTML=hofHTML;
+  // Store all ligas for H2H
+  window._allLigas=todasLigas;
+}
+
+function renderH2HHistorico(){
+  const j1=document.getElementById('h2h-j1')?.value;
+  const j2=document.getElementById('h2h-j2')?.value;
+  const con=document.getElementById('h2h-resultado');if(!con)return;
+  if(!j1||!j2||j1===j2){con.innerHTML='';return;}
+  const ligas=window._allLigas||[];
+  let w1=0,w2=0,emp=0;
+  let partHTML='';
+  ligas.forEach(l=>{
+    (l.fixture||[]).forEach(jorn=>{
+      (jorn.ps||[]).forEach(p=>{
+        if(!((p.L===j1&&p.V===j2)||(p.L===j2&&p.V===j1)))return;
+        const key=`j${jorn.f}_${p.L}_${p.V}`;
+        const res=(l.resultados||{})[key];
+        if(!res||res.gl===''||res.gv==='')return;
+        const gl=parseInt(res.gl),gv=parseInt(res.gv);if(isNaN(gl)||isNaN(gv))return;
+        const ganador=gl>gv?p.L:gv>gl?p.V:null;
+        if(ganador===j1)w1++;else if(ganador===j2)w2++;else emp++;
+        const esPrimero=p.L===j1;
+        const gf=esPrimero?gl:gv,gc=esPrimero?gv:gl;
+        const res2=gf>gc?'W':gf<gc?'L':'E';
+        partHTML+=`<div class="hp"><span style="font-size:.7rem;color:var(--gt)">${l.nombre} F${jorn.f}</span><span>${j1} ${gf}-${gc} ${j2}</span><span class="${res2}">${res2}</span></div>`;
+      });
+    });
+  });
+  const total=w1+w2+emp;
+  if(total===0){con.innerHTML='<div class="ib">Sin enfrentamientos entre estos jugadores.</div>';return;}
+  con.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;text-align:center;">
+    <div class="sc2"><div class="sl">${j1}</div><div class="sv">${w1}</div></div>
+    <div class="sc2"><div class="sl">Empates</div><div class="sv sn">${emp}</div></div>
+    <div class="sc2"><div class="sl">${j2}</div><div class="sv sb">${w2}</div></div>
+  </div>${partHTML}`;
 }
 
 /* ============================================================
