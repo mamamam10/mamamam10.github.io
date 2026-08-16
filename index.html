@@ -2313,11 +2313,11 @@ async function renderHOF(){
   if(campeonesLiga.length===0&&campeonesLigaCopa.length===0){
     hofHTML+='<div class="ib">Todavía no hay campeones registrados. Guardá los trofeos al terminar cada liga.</div>';
   }else{
-    hofHTML+='<div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin-bottom:6px;">🎖️ CAMPEONES DE LIGA</div>';
+    hofHTML+='<div style="font-family:\'Bebas Neue\',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin-bottom:6px;">🎖️ CAMPEONES DE LIGA</div>';
     campeonesLiga.forEach((c,i)=>{
       hofHTML+=`<div class="hof-card"><div class="hof-num">${i+1}</div><div><div class="hof-nombre">${c.jugador}</div><div class="hof-liga">${c.liga}</div></div><div style="margin-left:auto;font-size:1.2rem;">🎖️</div></div>`;
     });
-    hofHTML+='<div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin:10px 0 6px;">🏆 CAMPEONES DE COPA</div>';
+    hofHTML+='<div style="font-family:\'Bebas Neue\',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin:10px 0 6px;">🏆 CAMPEONES DE COPA</div>';
     campeonesLigaCopa.forEach((c,i)=>{
       hofHTML+=`<div class="hof-card"><div class="hof-num">${i+1}</div><div><div class="hof-nombre">${c.jugador}</div><div class="hof-liga">${c.liga}</div></div><div style="margin-left:auto;font-size:1.2rem;">🏆</div></div>`;
     });
