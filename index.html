@@ -526,7 +526,7 @@ function genFixture(jugadores,mezclar){
   return todas.map((ps,i)=>({f:i+1,ps}));
 }
 
-function mkL(nombre,jugadores,fixture,resultados,copa,pozoTotal,amistoso){
+function mkL(nombre,jugadores,fixture,resultados,copa,pozoTotal,amistoso,conTercero,pctg){
   const total=pozoTotal||jugadores.length*1500;
   return{id:'l'+Date.now()+'_'+Math.floor(Math.random()*9999),nombre,jugadores,
     fixture:fixture||genFixture(jugadores,false),resultados:resultados||{},copa:copa||{},
