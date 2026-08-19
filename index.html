@@ -526,7 +526,7 @@ function genFixture(jugadores,mezclar){
   return todas.map((ps,i)=>({f:i+1,ps}));
 }
 
-function mkL(nombre,jugadores,fixture,resultados,copa,pozoTotal,amistoso,conTercero,pctg){
+function mkL(nombre,jugadores,fixture,resultados,copa,pozoTotal,amistoso){
   const total=pozoTotal||jugadores.length*1500;
   return{id:'l'+Date.now()+'_'+Math.floor(Math.random()*9999),nombre,jugadores,
     fixture:fixture||genFixture(jugadores,false),resultados:resultados||{},copa:copa||{},
@@ -810,43 +810,7 @@ function renderFixture(){
       const res=liga.resultados[key]||{gl:'',gv:''};
       const d=bloqueado?'disabled':'';
       const jugado=res.gl!==''&&res.gv!=='';
-      // Predicciones de este partido
-      const preds=liga.predicciones?.[key]||[];
       let predHtml='';
-      if(jugado){
-        // Mostrar predicciones con resultado
-        if(preds.length>0){
-          const gl=parseInt(res.gl),gv=parseInt(res.gv);
-          predHtml=`<div class="pred-box">
-            <div class="pred-box-title">🎯 PREDICCIONES</div>
-            ${preds.map(pr=>{
-              const pts=calcPuntosPred(pr.gl,pr.gv,gl,gv);
-              const cls=pts===3?'pts3':pts===2?'pts2':pts===1?'pts1':'pts0';
-              const icon=pts===3?'🎯':pts===2?'✅':pts===1?'👍':'❌';
-              return`<div class="pred-result-row"><span>${pr.jugador}</span><span style="color:var(--gt)">${pr.gl}-${pr.gv}</span><span class="pred-pts ${cls}">${icon} ${pts}pts</span></div>`;
-            }).join('')}
-          </div>`;
-        }
-      }else{
-        // Mostrar form de predicción
-        const yaPredijo=(jugador)=>preds.some(pr=>pr.jugador===jugador);
-        const optsJugadores=liga.jugadores.map(j=>`<option value="${j}" ${yaPredijo(j)?'disabled':''}>
-          ${j}${yaPredijo(j)?' ✓':''}</option>`).join('');
-        predHtml=`<div class="pred-box">
-          <div class="pred-box-title">🎯 PREDICCIÓN — ${preds.length}/${liga.jugadores.length} predijeron</div>
-          <div class="pred-form">
-            <select class="pred-sel" id="ps_${key}">
-              <option value="">Tu nombre</option>${optsJugadores}
-            </select>
-            <input type="number" min="0" max="20" class="pred-inp" id="pgl_${key}" placeholder="0">
-            <span style="color:var(--gt);font-size:.8rem;">-</span>
-            <input type="number" min="0" max="20" class="pred-inp" id="pgv_${key}" placeholder="0">
-            ${Object.keys(liga.pins||{}).length>0?`<input type="password" maxlength="10" class="pred-pin-inp" id="ppin_${key}" placeholder="PIN">`:''}
-            <button class="pred-btn" onclick="guardarPred('${key}','${p.L}','${p.V}')">→</button>
-          </div>
-          ${preds.length>0?`<div style="font-size:.68rem;color:var(--gt);margin-top:5px;">Ya predijeron: ${preds.map(pr=>pr.jugador).join(', ')}</div>`:''}
-        </div>`;
-      }
       return`<div class="partido ${jugado?'ok':''}" id="c_${key}">
         <span class="tl">${p.L}</span>
         <div class="scb">
@@ -971,24 +935,45 @@ function calcRankingPred(){
   return Object.entries(pts).sort((a,b)=>b[1].pts-a[1].pts||b[1].exactos-a[1].exactos);
 }
 
+function calcRankingVotos(){
+  // Ranking de quién acierta más en los votos
+  const pts={};
+  liga.jugadores.forEach(j=>{pts[j]={aciertos:0,total:0};});
+  Object.entries(liga.votos||{}).forEach(([key,votos])=>{
+    const res=liga.resultados[key];
+    if(!res||res.gl===''||res.gv==='')return;
+    const gl=parseInt(res.gl),gv=parseInt(res.gv);
+    const resultado=gl>gv?'l':gv>gl?'v':'e';
+    ['l','e','v'].forEach(tipo=>{
+      (votos[tipo]||[]).forEach(jugador=>{
+        if(!pts[jugador])pts[jugador]={aciertos:0,total:0};
+        pts[jugador].total++;
+        if(tipo===resultado)pts[jugador].aciertos++;
+      });
+    });
+  });
+  return Object.entries(pts).sort((a,b)=>b[1].aciertos-a[1].aciertos||b[1].total-a[1].total);
+}
+
 function renderPred(){
   if(!liga)return;
-  const ranking=calcRankingPred();
+  const rankingVotos=calcRankingVotos();
   const con=document.getElementById('pred-con');
-  let html=`<div class="sec">🏅 RANKING DE PREDICCIONES</div>
-  <div class="ib">Exacto = 3pts · Ganador+diferencia = 2pts · Solo ganador = 1pt</div>
-  <div class="pred-ranking">`;
   const bdg=['p1','p2','p3'];
-  ranking.forEach(([n,s],i)=>{
+  let html=`<div class="sec">🗳️ RANKING DE VOTOS</div>
+  <div class="ib">Quién más acierta el resultado de los partidos.</div>
+  <div class="pred-ranking">`;
+  rankingVotos.filter(([,s])=>s.total>0).forEach(([n,s],i)=>{
+    const pct=s.total>0?Math.round(s.aciertos/s.total*100):0;
     html+=`<div class="pred-ranking-row">
       <span class="pred-rank-pos"><span class="pb ${bdg[i]||'px'}">${i+1}</span></span>
       <span style="font-weight:700;flex:1">${n}</span>
-      <span class="pred-rank-detail">🎯${s.exactos} ✅${s.ganador} (${s.total} pred.)</span>
-      <span class="pred-rank-pts" style="margin-left:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--v)">${s.pts}pts</span>
+      <span class="pred-rank-detail">${s.aciertos}/${s.total} aciertos</span>
+      <span class="pred-rank-pts" style="margin-left:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--v)">${pct}%</span>
     </div>`;
   });
   html+=`</div>`;
-  // Próximos partidos para predecir
+  // Próximos partidos pendientes de voto
   const sinResultado=[];
   liga.fixture.forEach(jorn=>{
     jorn.ps.forEach(p=>{
@@ -998,24 +983,10 @@ function renderPred(){
     });
   });
   if(sinResultado.length>0){
-    html+=`<div class="sec">⏳ PRÓXIMOS — PREDECÍ AHORA</div>`;
-    sinResultado.slice(0,6).forEach(({key,p,f})=>{
-      const preds=liga.predicciones?.[key]||[];
-      const yaPredijo=j=>preds.some(pr=>pr.jugador===j);
-      const opts=liga.jugadores.map(j=>`<option value="${j}" ${yaPredijo(j)?'disabled':''}>${j}${yaPredijo(j)?' ✓':''}</option>`).join('');
-      html+=`<div class="ib" style="margin-bottom:8px;">
-        <div style="font-weight:700;margin-bottom:6px;color:var(--bl)">Fecha ${f}: ${p.L} vs ${p.V}</div>
-        <div class="pred-form">
-          <select class="pred-sel" id="psp_${key}"><option value="">Tu nombre</option>${opts}</select>
-          <input type="number" min="0" max="20" class="pred-inp" id="pglp_${key}" placeholder="0">
-          <span style="color:var(--gt)">-</span>
-          <input type="number" min="0" max="20" class="pred-inp" id="pgvp_${key}" placeholder="0">
-          ${Object.keys(liga.pins||{}).length>0?`<input type="password" maxlength="10" class="pred-pin-inp" id="ppinp_${key}" placeholder="PIN">`:''}
-          <button class="pred-btn" onclick="guardarPredTab('${key}','${p.L}','${p.V}')">Predecir →</button>
-        </div>
-        ${preds.length>0?`<div style="font-size:.68rem;color:var(--gt);margin-top:4px;">Ya predijeron: ${preds.map(pr=>pr.jugador).join(', ')}</div>`:''}
-      </div>`;
-    });
+    html+=`<div class="sec">⏳ PRÓXIMOS — VOTÁ AHORA</div>
+    <div class="ib">Abrí la pestaña Fixture para votar en cada partido.</div>`;
+  }else{
+    html+=`<div class="ib" style="margin-top:8px;">Todos los partidos ya tienen resultado.</div>`;
   }
   con.innerHTML=html;
 }
@@ -2030,6 +2001,14 @@ function getFotoJugador(nombre){
 
 async function cambiarFotoPerfil(nombre,inputEl){
   const file=inputEl.files[0];if(!file)return;
+  // Verificar PIN antes de subir
+  const pins=liga.pins||{};
+  if(Object.keys(pins).length>0){
+    const pin=prompt(`🔑 PIN de ${nombre} para cambiar la foto:`);
+    if(!pin){inputEl.value='';return;}
+    if(!pins[nombre]){toast('❌ Este jugador no tiene PIN asignado');inputEl.value='';return;}
+    if(String(pins[nombre])!==String(pin)){toast('❌ PIN incorrecto');inputEl.value='';return;}
+  }
   if(file.size>1.5*1024*1024){toast('Foto muy grande (máx 1.5MB)');return;}
   toast('Subiendo...');
   const reader=new FileReader();
@@ -2038,8 +2017,7 @@ async function cambiarFotoPerfil(nombre,inputEl){
     liga.fotosJugadores[nombre]=e.target.result;
     await guardarEnSupabase();
     renderTabla();renderPBtns();
-    // Refresh perfil if open
-    const btn=document.querySelector(`.pbtn.active`);
+    const btn=document.querySelector('.pbtn.active');
     if(btn)showPerfil(nombre,btn);
     toast('✓ Foto actualizada');
   };
@@ -2236,7 +2214,7 @@ async function confirmarVoto(key,local,visitante){
    GRÁFICO DE EVOLUCIÓN
    ============================================================ */
 let _chartInstance=null;
-const CHART_COLORS=['#00FF87','#FFD700','#ff6b6b','#a855f7','#38bdf8','#f97316','#10b981'];
+const CHART_COLORS=['#00FF87','#FF4444','#FFD700','#a855f7','#38bdf8','#f97316','#FF69B4','#00BFFF','#FF8C00','#7FFF00'];
 
 function switchVista(modo){
   document.getElementById('vista-tabla').style.display=modo==='tabla'?'block':'none';
@@ -2313,11 +2291,11 @@ async function renderHOF(){
   if(campeonesLiga.length===0&&campeonesLigaCopa.length===0){
     hofHTML+='<div class="ib">Todavía no hay campeones registrados. Guardá los trofeos al terminar cada liga.</div>';
   }else{
-    hofHTML+='<div style="font-family:\'Bebas Neue\',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin-bottom:6px;">🎖️ CAMPEONES DE LIGA</div>';
+    hofHTML+='<div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin-bottom:6px;">🎖️ CAMPEONES DE LIGA</div>';
     campeonesLiga.forEach((c,i)=>{
       hofHTML+=`<div class="hof-card"><div class="hof-num">${i+1}</div><div><div class="hof-nombre">${c.jugador}</div><div class="hof-liga">${c.liga}</div></div><div style="margin-left:auto;font-size:1.2rem;">🎖️</div></div>`;
     });
-    hofHTML+='<div style="font-family:\'Bebas Neue\',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin:10px 0 6px;">🏆 CAMPEONES DE COPA</div>';
+    hofHTML+='<div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:.82rem;color:var(--am);margin:10px 0 6px;">🏆 CAMPEONES DE COPA</div>';
     campeonesLigaCopa.forEach((c,i)=>{
       hofHTML+=`<div class="hof-card"><div class="hof-num">${i+1}</div><div><div class="hof-nombre">${c.jugador}</div><div class="hof-liga">${c.liga}</div></div><div style="margin-left:auto;font-size:1.2rem;">🏆</div></div>`;
     });
@@ -2326,9 +2304,17 @@ async function renderHOF(){
   // Tabla histórica acumulada
   hofHTML+='<div class="sec">📈 TABLA HISTÓRICA</div>';
   const hist={};
+  // nameKey: normaliza nombres para agrupar joseph/Joseph como el mismo
+  const nameKey=n=>n.trim().toLowerCase();
+  const nameDisplay={}; // guarda el nombre con mayúscula correcta
   todasLigas.forEach(l=>{
     const jug=l.jugadores||[];
-    jug.forEach(j=>{if(!hist[j])hist[j]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+    jug.forEach(j=>{
+      const k=nameKey(j);
+      // Preferir el nombre con primera letra mayúscula
+      if(!nameDisplay[k]||j[0]===j[0].toUpperCase())nameDisplay[k]=j;
+      if(!hist[k])hist[k]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+    });
     (l.fixture||[]).forEach(jorn=>{
       (jorn.ps||[]).forEach(p=>{
         const key=`j${jorn.f}_${p.L}_${p.V}`;
@@ -2336,14 +2322,15 @@ async function renderHOF(){
         if(!res||res.gl===''||res.gv==='')return;
         const gl=parseInt(res.gl),gv=parseInt(res.gv);if(isNaN(gl)||isNaN(gv))return;
         [[p.L,gl,gv],[p.V,gv,gl]].forEach(([jj,gf,gc])=>{
-          if(!hist[jj])hist[jj]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
-          hist[jj].pj++;hist[jj].gf+=gf;hist[jj].gc+=gc;
-          if(gf>gc){hist[jj].g++;hist[jj].pts+=3;}else if(gc>gf)hist[jj].p++;else{hist[jj].e++;hist[jj].pts++;}
+          const k=nameKey(jj);
+          if(!hist[k])hist[k]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+          hist[k].pj++;hist[k].gf+=gf;hist[k].gc+=gc;
+          if(gf>gc){hist[k].g++;hist[k].pts+=3;}else if(gc>gf)hist[k].p++;else{hist[k].e++;hist[k].pts++;}
         });
       });
     });
   });
-  const sortedHist=Object.entries(hist).filter(([,s])=>s.pj>0).sort((a,b)=>b[1].pts-a[1].pts);
+  const sortedHist=Object.entries(hist).filter(([,s])=>s.pj>0).sort((a,b)=>b[1].pts-a[1].pts).map(([k,s])=>[nameDisplay[k]||k,s]);
   const bdg=['p1','p2','p3'];
   hofHTML+=`<div class="tw"><table><thead><tr><th>Jugador</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr></thead><tbody>
     ${sortedHist.map(([n,s],i)=>`<tr class="${i===0?'hl':''}"><td><span class="pb ${bdg[i]||'px'}">${i+1}</span><span class="pn">${n}</span></td>
@@ -2395,9 +2382,9 @@ async function renderHOF(){
   // H2H buscador
   hofHTML+=`<div class="sec">🔍 H2H ENTRE DOS JUGADORES</div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-    <select class="h2h-sel" id="h2h-j1" onchange="renderH2HHistorico()"><option value="">Jugador 1</option>${Object.keys(hist).map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+    <select class="h2h-sel" id="h2h-j1" onchange="renderH2HHistorico()"><option value="">Jugador 1</option>${Object.keys(hist).map(k=>`<option value="${nameDisplay[k]||k}">${nameDisplay[k]||k}</option>`).join('')}</select>
     <span class="h2h-vs">VS</span>
-    <select class="h2h-sel" id="h2h-j2" onchange="renderH2HHistorico()"><option value="">Jugador 2</option>${Object.keys(hist).map(j=>`<option value="${j}">${j}</option>`).join('')}</select>
+    <select class="h2h-sel" id="h2h-j2" onchange="renderH2HHistorico()"><option value="">Jugador 2</option>${Object.keys(hist).map(k=>`<option value="${nameDisplay[k]||k}">${nameDisplay[k]||k}</option>`).join('')}</select>
   </div>
   <div id="h2h-resultado"></div>`;
 
@@ -2417,7 +2404,8 @@ function renderH2HHistorico(){
   ligas.forEach(l=>{
     (l.fixture||[]).forEach(jorn=>{
       (jorn.ps||[]).forEach(p=>{
-        if(!((p.L===j1&&p.V===j2)||(p.L===j2&&p.V===j1)))return;
+        const pLl=p.L.toLowerCase(),pVl=p.V.toLowerCase(),j1l=j1.toLowerCase(),j2l=j2.toLowerCase();
+        if(!((pLl===j1l&&pVl===j2l)||(pLl===j2l&&pVl===j1l)))return;
         const key=`j${jorn.f}_${p.L}_${p.V}`;
         const res=(l.resultados||{})[key];
         if(!res||res.gl===''||res.gv==='')return;
