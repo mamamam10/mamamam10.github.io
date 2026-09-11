@@ -368,15 +368,10 @@ let predicciones={}; // {key: [{jugador, gl, gv}]}
 /* ========================================================
    ONESIGNAL INIT Y NOTIFICACIONES
    ======================================================== */
-async function enviarNotificacion(titulo, mensaje, partidoId) {
+async function enviarNotificacion(titulo, mensaje) {
   try {
     const { data, error } = await supClient.functions.invoke('send-notification', {
-      body: { 
-        titulo, 
-        mensaje, 
-        url: window.location.href,
-        partido_id: partidoId || Date.now() 
-      }
+      body: { titulo, mensaje, url: window.location.href }
     });
 
     if (error) {
@@ -404,11 +399,6 @@ function generarTituloPartido(local, visitante, gl, gv) {
   return `⚽ ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
 }
 
-async function notificarResultadoPartido(partidoId, local, visitante, golesL, golesV) {
-  const tituloNoti = generarTituloPartido(local, visitante, golesL, golesV);
-  const mensajeNoti = "¡Nuevo resultado registrado en la liga!";
-  await enviarNotificacion(tituloNoti, mensajeNoti, partidoId);
-}
 /* ============================================================
    SUPABASE INIT
    ============================================================ */
