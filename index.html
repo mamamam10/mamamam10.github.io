@@ -362,37 +362,52 @@ let supaClient=null,liga=null,actId=null,idx=[],isAdmin=false,realtimeSub=null;
 const TT={};
 let predicciones={}; // {key: [{jugador, gl, gv}]}
 
-/* ============================================================
+const TT={};
+let predicciones={}; // {key: [{jugador, gl, gv}]}
+
+/* ========================================================
    ONESIGNAL INIT Y NOTIFICACIONES
-   ============================================================ */
-async function enviarNotificacion(titulo, mensaje) {
+   ======================================================== */
+async function enviarNotificacion(titulo, mensaje, partidoId) {
   try {
-    const { data, error } = await supaClient.functions.invoke('send-notification', {
-      body: { titulo, mensaje, url: window.location.href }
+    const { data, error } = await supClient.functions.invoke('send-notification', {
+      body: { 
+        titulo, 
+        mensaje, 
+        url: window.location.href,
+        partido_id: partidoId || Date.now() 
+      }
     });
-    
+
     if (error) {
       console.error('Error en Supabase Function:', error);
     } else {
-      console.log('Notificación enviada correctamente via backend:', data);
+      console.log('Notificación enviada correctamente vía backend:', data);
     }
-  } catch (e) { 
-    console.log('Notif error:', e); 
+  } catch (e) {
+    console.log('Notif error:', e);
   }
 }
+
 function generarTituloPartido(local, visitante, gl, gv) {
   const glN = parseInt(gl), gvN = parseInt(gv);
   const dif = Math.abs(glN - gvN);
   const ganador = glN > gvN ? local : visitante;
   const perdedor = glN > gvN ? visitante : local;
   if (glN === gvN) {
-    if (glN === 0) return `🤝 ${local} y ${visitante} empatan 0-0`;
-    return `🤝 ${local} y ${visitante} empatan ${glN}-${gvN}`;
+    if (glN === 0) return `⚽ ${local} y ${visitante} empatan 0-0`;
+    return `⚽ ${local} y ${visitante} empatan ${glN}-${gvN}`;
   }
   if (dif >= 4) return `🔥 ¡GOLEADA! ${ganador} aplasta ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
   if (dif === 3) return `⚽ ${ganador} golea ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  if (dif === 2) return `😎 ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  return `⚡ ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  if (dif === 2) return `😁 ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  return `⚽ ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+}
+
+async function notificarResultadoPartido(partidoId, local, visitante, golesL, golesV) {
+  const tituloNoti = generarTituloPartido(local, visitante, golesL, golesV);
+  const mensajeNoti = "¡Nuevo resultado registrado en la liga!";
+  await enviarNotificacion(tituloNoti, mensajeNoti, partidoId);
 }
 /* ============================================================
    SUPABASE INIT
