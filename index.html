@@ -363,7 +363,7 @@ const TT={};
 let predicciones={}; // {key: [{jugador, gl, gv}]}
 
 /* ============================================================
-   ONESIGNAL INIT
+   ONESIGNAL INIT Y NOTIFICACIONES
    ============================================================ */
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 OneSignalDeferred.push(async function(OneSignal) {
@@ -376,11 +376,36 @@ OneSignalDeferred.push(async function(OneSignal) {
 });
 
 async function enviarNotificacion(titulo, mensaje) {
+  if (!ONESIGNAL_ID || !ONESIGNAL_REST) {
+    console.warn("Faltan las credenciales de OneSignal");
+    return;
+  }
+
   try {
-    await supaClient.functions.invoke('send-notification', {
-      body: { titulo, mensaje, url: window.location.href }
+    const respuesta = await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": `Basic ${ONESIGNAL_REST}`
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_ID,
+        included_segments: ["All"],
+        headings: { en: titulo },
+        contents: { en: mensaje },
+        url: window.location.href
+      })
     });
-  } catch(e) { console.log('Notif error:', e); }
+
+    const data = await respuesta.json();
+    if (data.errors) {
+      console.error("Error al enviar notificación de OneSignal:", data.errors);
+    } else {
+      console.log("Notificación enviada con éxito:", data.id);
+    }
+  } catch (e) { 
+    console.log('Notif error:', e); 
+  }
 }
 
 function generarTituloPartido(local, visitante, gl, gv) {
@@ -389,15 +414,14 @@ function generarTituloPartido(local, visitante, gl, gv) {
   const ganador = glN > gvN ? local : visitante;
   const perdedor = glN > gvN ? visitante : local;
   if (glN === gvN) {
-    if (glN === 0) return `🤐 ${local} y ${visitante} empatan 0-0`;
-    return `😤 ${local} y ${visitante} empatan ${glN}-${gvN}`;
+    if (glN === 0) return `🤝 ${local} y ${visitante} empatan 0-0`;
+    return `🤝 ${local} y ${visitante} empatan ${glN}-${gvN}`;
   }
-  if (dif >= 4) return `💥 ¡GOLEADA! ${ganador} aplasta ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  if (dif === 3) return `🔥 ${ganador} golea ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  if (dif === 2) return `⚽ ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  return `😬 ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  if (dif >= 4) return `🔥 ¡GOLEADA! ${ganador} aplasta ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  if (dif === 3) return `⚽ ${ganador} golea ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  if (dif === 2) return `😎 ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  return `⚡ ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
 }
-
 /* ============================================================
    SUPABASE INIT
    ============================================================ */
