@@ -365,49 +365,21 @@ let predicciones={}; // {key: [{jugador, gl, gv}]}
 /* ============================================================
    ONESIGNAL INIT Y NOTIFICACIONES
    ============================================================ */
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.init({
-    appId: ONESIGNAL_ID,
-    safari_web_id: '',
-    notifyButton: { enable: false },
-    allowLocalhostAsSecureOrigin: true,
-  });
-});
-
 async function enviarNotificacion(titulo, mensaje) {
-  if (!ONESIGNAL_ID || !ONESIGNAL_REST) {
-    console.warn("Faltan las credenciales de OneSignal");
-    return;
-  }
-
   try {
-    const respuesta = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": `Basic ${ONESIGNAL_REST}`
-      },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_ID,
-        included_segments: ["All"],
-        headings: { en: titulo },
-        contents: { en: mensaje },
-        url: window.location.href
-      })
+    const { data, error } = await supaClient.functions.invoke('send-notification', {
+      body: { titulo, mensaje, url: window.location.href }
     });
-
-    const data = await respuesta.json();
-    if (data.errors) {
-      console.error("Error al enviar notificación de OneSignal:", data.errors);
+    
+    if (error) {
+      console.error('Error en Supabase Function:', error);
     } else {
-      console.log("Notificación enviada con éxito:", data.id);
+      console.log('Notificación enviada correctamente via backend:', data);
     }
   } catch (e) { 
     console.log('Notif error:', e); 
   }
 }
-
 function generarTituloPartido(local, visitante, gl, gv) {
   const glN = parseInt(gl), gvN = parseInt(gv);
   const dif = Math.abs(glN - gvN);
