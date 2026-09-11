@@ -891,6 +891,8 @@ function notifManualPartido(local,visitante,gl,gv,tipo){
 }
 
 
+let guardandoPartido = false;
+
 function preG(k,local,visitante){clearTimeout(TT[k]);TT[k]=setTimeout(()=>gP(k,local,visitante),600);}
 async function gP(k,local,visitante){
   if(!isAdmin||liga.terminada)return;
@@ -899,15 +901,25 @@ async function gP(k,local,visitante){
   if(gl===''&&gv==='')delete liga.resultados[k];
   else liga.resultados[k]={gl,gv};
   document.getElementById('c_'+k)?.classList.toggle('ok',gl!==''&&gv!=='');
-  await guardarEnSupabase();
   renderTabla();
-  // Notificación
-  if(gl!==''&&gv!==''){
-    const titulo=generarTituloPartido(local,visitante,gl,gv);
-    const msg=`Liga ${liga.nombre} • ${local} ${gl}-${gv} ${visitante}`;
-    enviarNotificacion(titulo,msg);
+
+  if(guardandoPartido) return;
+
+  try {
+    guardandoPartido = true;
+    await guardarEnSupabase();
+    // Notificación
+    if(gl!==''&&gv!==''){
+      const titulo=generarTituloPartido(local,visitante,gl,gv);
+      const msg=`Liga ${liga.nombre} • ${local} ${gl}-${gv} ${visitante}`;
+      enviarNotificacion(titulo,msg);
+    }
+    toast('✓ GUARDADO');
+  } catch(e) {
+    console.error(e);
+  } finally {
+    guardandoPartido = false;
   }
-  toast('✓ GUARDADO');
 }
 
 /* ============================================================
