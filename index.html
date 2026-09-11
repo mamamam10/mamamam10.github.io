@@ -725,13 +725,16 @@ function renderTablaFecha(){
 }
 
 /* ============================================================
-   FOTOS POR PARTIDO
+   FOTOS POR PARTIDO (Con botón para borrar)
    ============================================================ */
 function renderFotosPartido(key,isAdmin){
   if(!liga.fotos)liga.fotos={};
   const fotos=liga.fotos[key]||[];
   const previewHtml=fotos.map((url,i)=>`
-    <img src="${url}" class="foto-thumb" onclick="verFotoGrande('${url}')" title="Ver foto">`).join('');
+    <div style="position:relative;display:inline-block;margin-right:5px;">
+      <img src="${url}" class="foto-thumb" onclick="verFotoGrande('${url}')" title="Ver foto">
+      ${isAdmin?`<button onclick="borrarFoto('${key}',${i})" style="position:absolute;top:-5px;right:-5px;background:red;color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>`:''}
+    </div>`).join('');
   const addBtn=isAdmin&&fotos.length<2?`
     <label class="foto-add-btn">
       📷 ${fotos.length===0?'Agregar foto':'Agregar otra'}
@@ -748,7 +751,6 @@ async function subirFoto(event,key){
   const file=event.target.files[0];if(!file)return;
   if(file.size>2*1024*1024){toast('Foto muy grande (máx 2MB)');return;}
   toast('Subiendo foto...');
-  // Convertir a base64 y guardar en Supabase Storage o como base64
   const reader=new FileReader();
   reader.onload=async(e)=>{
     if(!liga.fotos)liga.fotos={};
@@ -760,6 +762,19 @@ async function subirFoto(event,key){
     toast('✓ Foto agregada');
   };
   reader.readAsDataURL(file);
+}
+
+async function borrarFoto(key,index){
+  if(!isAdmin)return;
+  if(!confirm('¿Querés borrar esta foto para liberar espacio?'))return;
+  toast('Borrando foto...');
+  if(liga.fotos && liga.fotos[key]){
+    liga.fotos[key].splice(index, 1);
+    if(liga.fotos[key].length === 0) delete liga.fotos[key];
+    await guardarEnSupabase();
+    renderFixture();
+    toast('✓ Foto eliminada');
+  }
 }
 
 function verFotoGrande(url){
@@ -889,7 +904,6 @@ function notifManualPartido(local,visitante,gl,gv,tipo){
   enviarNotificacion(titulo,msg);
   toast('🔔 Notificación enviada');
 }
-
 
 let guardandoPartido = false;
 
