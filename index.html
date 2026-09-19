@@ -318,6 +318,75 @@ tbody td:first-child{text-align:left;}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+<style>
+  .tarjeta-fecha {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  }
+  .header-fecha {
+    background: #252525;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    font-weight: bold;
+  }
+  .header-fecha:hover {
+    background: #303030;
+  }
+  .cuerpo-fecha {
+    padding: 15px;
+    background: #121212;
+    color: #ddd;
+  }
+</style>
+
+<script>
+  // Función para abrir y cerrar cada fecha
+  function toggleFecha(headerElement) {
+    const cuerpo = headerElement.nextElementSibling;
+    if (cuerpo.style.display === "none") {
+      cuerpo.style.display = "block";
+    } else {
+      cuerpo.style.display = "none";
+    }
+  }
+
+  // Función para renderizar el fixture con el sistema de acordeón
+  function renderizarFixture(fechasDeLaLiga) {
+    const contenedor = document.getElementById("fix-con");
+    if (!contenedor) return;
+    contenedor.innerHTML = "";
+
+    fechasDeLaLiga.forEach((fecha) => {
+      const fechaTerminada = fecha.partidos.every(p => p.golesLocal !== null && p.golesVisitante !== null);
+      const estiloInicial = fechaTerminada ? "display: none;" : "display: block;";
+
+      const tarjetaHTML = `
+        <div class="tarjeta-fecha">
+          <div class="header-fecha" onclick="toggleFecha(this)">
+            <span>${fecha.nombre} ${fechaTerminada ? '✅ (Finalizada)' : '⚽ (En juego / Próxima)'}</span>
+            <span>▼</span>
+          </div>
+          <div class="cuerpo-fecha" style="${estiloInicial}">
+            ${fecha.partidos.map(p => `
+              <div style="padding: 6px 0; border-bottom: 1px solid #222;">
+                <strong>${p.local}</strong>${p.golesLocal ?? '-'} vs ${p.golesVisitante ?? '-'} <strong>${p.visitante}</strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      contenedor.innerHTML += tarjetaHTML;
+    });
+  }
+</script>
 /* ============================================================
    CONFIGURACIÓN
    ============================================================ */
@@ -362,38 +431,43 @@ let supaClient=null,liga=null,actId=null,idx=[],isAdmin=false,realtimeSub=null;
 const TT={};
 let predicciones={}; // {key: [{jugador, gl, gv}]}
 
-/* ============================================================
+const TT={};
+let predicciones={}; // {key: [{jugador, gl, gv}]}
+
+/* ========================================================
    ONESIGNAL INIT Y NOTIFICACIONES
-   ============================================================ */
+   ======================================================== */
 async function enviarNotificacion(titulo, mensaje) {
   try {
-    const { data, error } = await supaClient.functions.invoke('send-notification', {
+    const { data, error } = await supClient.functions.invoke('send-notification', {
       body: { titulo, mensaje, url: window.location.href }
     });
-    
+
     if (error) {
       console.error('Error en Supabase Function:', error);
     } else {
-      console.log('Notificación enviada correctamente via backend:', data);
+      console.log('Notificación enviada correctamente vía backend:', data);
     }
-  } catch (e) { 
-    console.log('Notif error:', e); 
+  } catch (e) {
+    console.log('Notif error:', e);
   }
 }
+
 function generarTituloPartido(local, visitante, gl, gv) {
   const glN = parseInt(gl), gvN = parseInt(gv);
   const dif = Math.abs(glN - gvN);
   const ganador = glN > gvN ? local : visitante;
   const perdedor = glN > gvN ? visitante : local;
   if (glN === gvN) {
-    if (glN === 0) return `🤝 ${local} y ${visitante} empatan 0-0`;
-    return `🤝 ${local} y ${visitante} empatan ${glN}-${gvN}`;
+    if (glN === 0) return `⚽ ${local} y ${visitante} empatan 0-0`;
+    return `⚽ ${local} y ${visitante} empatan ${glN}-${gvN}`;
   }
   if (dif >= 4) return `🔥 ¡GOLEADA! ${ganador} aplasta ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
   if (dif === 3) return `⚽ ${ganador} golea ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  if (dif === 2) return `😎 ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
-  return `⚡ ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  if (dif === 2) return `😁 ${ganador} gana cómodo ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
+  return `⚽ ${ganador} gana por poco ${glN > gvN ? glN+'-'+gvN : gvN+'-'+glN} a ${perdedor}`;
 }
+
 /* ============================================================
    SUPABASE INIT
    ============================================================ */
@@ -1504,7 +1578,7 @@ function calcInd(sm){
     {i:'🥶',n:'El más gagá',d:`${gaga?.p||0} derrotas`,g:gaga?.n||'—'},
     {i:'🔥',n:'Mejor racha',d:`${racha.max} victorias seguidas`,g:racha.j||'—'},
     {i:'⚽',n:'Mejor partido',d:bp?`${bp.L} ${bp.gl}–${bp.gv} ${bp.V}`:'Pendiente',g:bp?`Fecha ${bp.f}`:'—'},
-    {i:'💣',n:'Verdugo',d:`${verd.max} goles en un partido`,g:verd.j||'—'},
+    {i:'💣',n:'Vergudo',d:`${verd.max} goles en un partido`,g:verd.j||'—'},
   ];
 }
 function calcRachaMejor(sm){
